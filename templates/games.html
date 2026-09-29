@@ -2,62 +2,680 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Games</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GAME HUB - Casino Table Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
 <style>
-    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: #0d0d0d; font-family: sans-serif; }
-    .title-bar { text-align: center; font-size: 32px; font-weight: 700; color: white; padding-top: 20px; }
-    .top-bar { display: flex; justify-content: flex-end; padding: 20px; position: absolute; top: 0; right: 0; left: 0; }
-    .settings-btn { width: 32px; height: 32px; cursor: pointer; }
-    .game-scroll { position: absolute; top: 55%; left: 0; right: 0; transform: translateY(-50%); display: flex; overflow-x: auto; gap: 24px; padding: 0 20px; }
-    .game-btn { flex: 0 0 auto; width: 180px; height: 120px; border-radius: 12px; border: none; cursor: pointer; background: #222; color: white; font-size: 18px; font-weight: 600; display: flex; justify-content: center; align-items: center; text-decoration: none; }
-    .highlow { background: #36d1dc; }
-    .blackjack { background: #e74c3c }
-    .ranking { background: #f6d365; }
-    .chat { background: #a1c4fd; }
-    .revive { background: #96e6a1; }
-    .transfer { background: #8e44ad; }
-    .popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; }
-    .popup-content { background: #111; padding: 20px; border-radius: 12px; width: 260px; text-align: center; color: white; position: relative; }
-    .close-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; color: white; font-size: 22px; cursor: pointer; }
-    .menu-btn { display: block; background: #444; padding: 10px; margin: 10px 0; border-radius: 8px; text-decoration: none; color: white; }
-    .logout { background: #b00000; }
-    .hidden { display: none; }
+    :root {
+        --felt-dark: #0f3d23;
+        --felt-base: #175431;
+        --felt-light: #206e42;
+        --gold-primary: #f3c350;
+        --gold-light: #fff0aa;
+        --gold-dark: #b8860b;
+        --wood-border: #2a1508;
+        --wood-inner: #42210b;
+        --card-bg: #fcfbf7;
+        --card-shadow: rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+        box-sizing: border-box;
+        user-select: none;
+    }
+
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: 'Noto Sans JP', 'Cinzel', serif;
+        background-color: var(--wood-border);
+        color: #ffffff;
+    }
+
+    /* カジノテーブルの外枠（木枠）とグリーンボード（フェルト） */
+    .table-container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(circle at center, var(--felt-light) 0%, var(--felt-base) 60%, var(--felt-dark) 100%);
+        border: 20px solid var(--wood-border);
+        box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 0, 0, 0.9);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 24px;
+        overflow: hidden;
+    }
+
+    /* フェルト生地の質感を模した微細なパターンオーバーレイ */
+    .table-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        background-size: 12px 12px;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    /* テーブル上の楕円ライン（カジノテーブル装飾線） */
+    .table-line {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 92%;
+        height: 82%;
+        border: 2px solid rgba(243, 195, 80, 0.25);
+        border-radius: 120px;
+        pointer-events: none;
+        box-shadow: inset 0 0 15px rgba(243, 195, 80, 0.1);
+        z-index: 1;
+    }
+
+    /* HUD / トップバー */
+    .hud-bar {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(18, 12, 8, 0.7);
+        border: 2px solid var(--gold-dark);
+        border-radius: 50px;
+        padding: 10px 28px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(243, 195, 80, 0.2);
+        backdrop-filter: blur(8px);
+    }
+
+    /* チップ / コインバッジ */
+    .chip-badge {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: linear-gradient(135deg, rgba(243, 195, 80, 0.2), rgba(0, 0, 0, 0.4));
+        border: 1px solid var(--gold-primary);
+        padding: 6px 18px;
+        border-radius: 30px;
+        color: var(--gold-light);
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 18px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    .chip-icon {
+        width: 26px;
+        height: 26px;
+        background: radial-gradient(circle, var(--gold-light) 20%, var(--gold-primary) 60%, var(--gold-dark) 100%);
+        border-radius: 50%;
+        border: 2px dashed #333;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #000;
+        font-weight: 900;
+        font-size: 12px;
+    }
+
+    .title-bar {
+        font-family: 'Cinzel', serif;
+        font-size: 26px;
+        font-weight: 900;
+        letter-spacing: 4px;
+        color: var(--gold-light);
+        text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(243, 195, 80, 0.3);
+        text-transform: uppercase;
+    }
+
+    .top-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .icon-btn {
+        width: 42px;
+        height: 42px;
+        background: linear-gradient(145deg, #3a2212, #1f1007);
+        border: 1.5px solid var(--gold-primary);
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: var(--gold-primary);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    }
+
+    .icon-btn:hover {
+        transform: translateY(-2px) scale(1.05);
+        border-color: var(--gold-light);
+        color: var(--gold-light);
+        box-shadow: 0 6px 12px rgba(243, 195, 80, 0.3);
+    }
+
+    .icon-btn svg {
+        width: 22px;
+        height: 22px;
+        fill: currentColor;
+    }
+
+    /* テーブル中央のカードエリア */
+    .game-scroll-wrapper {
+        position: relative;
+        z-index: 10;
+        width: 100%;
+        margin: auto 0;
+    }
+
+    .game-scroll {
+        display: flex;
+        overflow-x: auto;
+        gap: 28px;
+        padding: 40px 20px;
+        scroll-behavior: smooth;
+        scrollbar-width: thin;
+        scrollbar-color: var(--gold-dark) rgba(0,0,0,0.3);
+        perspective: 1000px;
+    }
+
+    .game-scroll::-webkit-scrollbar {
+        height: 8px;
+    }
+    .game-scroll::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.3);
+        border-radius: 4px;
+    }
+    .game-scroll::-webkit-scrollbar-thumb {
+        background: var(--gold-dark);
+        border-radius: 4px;
+    }
+
+    /* リアルなトランプカード */
+    .card-btn {
+        flex: 0 0 auto;
+        width: 200px;
+        height: 290px;
+        border-radius: 14px;
+        background: var(--card-bg);
+        border: 2px solid #e2d8c3;
+        box-shadow: 0 10px 25px var(--card-shadow), inset 0 0 15px rgba(0,0,0,0.05);
+        text-decoration: none;
+        color: #1a1a1a;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 14px;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease;
+        transform-style: preserve-3d;
+        cursor: pointer;
+    }
+
+    /* カードの二重フレーム枠 */
+    .card-btn::after {
+        content: '';
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        border: 1px solid rgba(0,0,0,0.12);
+        border-radius: 8px;
+        pointer-events: none;
+    }
+
+    /* カードホバー時の立体浮き上がりエフェクト */
+    .card-btn:hover {
+        transform: translateY(-18px) rotateX(8deg) scale(1.05);
+        box-shadow: 0 25px 35px rgba(0, 0, 0, 0.6), 0 0 15px rgba(243, 195, 80, 0.4);
+        border-color: var(--gold-primary);
+    }
+
+    /* カードの角マーク */
+    .card-corner {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 16px;
+        line-height: 1;
+    }
+
+    .card-corner.top-left {
+        top: 12px;
+        left: 12px;
+    }
+
+    .card-corner.bottom-right {
+        bottom: 12px;
+        right: 12px;
+        transform: rotate(180deg);
+    }
+
+    /* スートカラー */
+    .red-suit { color: #d32f2f; }
+    .black-suit { color: #212121; }
+    .gold-suit { color: #b8860b; }
+    .green-suit { color: #2e7d32; }
+
+    /* 中央のメインコンテンツ・イラスト */
+    .card-center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: auto 0;
+        text-align: center;
+    }
+
+    .card-icon {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card-icon svg {
+        width: 100%;
+        height: 100%;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+    }
+
+    .card-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+        letter-spacing: 1px;
+    }
+
+    .card-subtitle {
+        font-family: 'Cinzel', serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: #777777;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+    }
+
+    /* 復活ゲーリボンラベル */
+    .card-badge {
+        position: absolute;
+        top: 14px;
+        right: -32px;
+        background: linear-gradient(135deg, #2e7d32, #1b5e20);
+        color: #fff;
+        font-size: 10px;
+        font-weight: bold;
+        padding: 4px 35px;
+        transform: rotate(45deg);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        letter-spacing: 1px;
+        border: 1px dashed var(--gold-light);
+    }
+
+    /* スクロール矢印ボタン */
+    .scroll-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 46px;
+        height: 46px;
+        background: linear-gradient(145deg, #3a2212, #1f1007);
+        border: 2px solid var(--gold-primary);
+        color: var(--gold-primary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 20;
+        transition: all 0.2s;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .scroll-arrow:hover {
+        background: var(--gold-primary);
+        color: #2a1508;
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    .scroll-arrow.left { left: 4px; }
+    .scroll-arrow.right { right: 4px; }
+
+    /* ポップアップ（カジノウッド枠） */
+    .popup {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(5px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+        opacity: 1;
+        transition: opacity 0.3s ease;
+    }
+
+    .popup.hidden {
+        display: none;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .popup-content {
+        background: radial-gradient(circle, #2b1a0e 0%, #170d06 100%);
+        border: 3px solid var(--gold-primary);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9), inset 0 0 15px rgba(243, 195, 80, 0.2);
+        padding: 32px 28px;
+        border-radius: 16px;
+        width: 320px;
+        text-align: center;
+        color: white;
+        position: relative;
+    }
+
+    .popup-header {
+        font-family: 'Cinzel', serif;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--gold-light);
+        margin-bottom: 24px;
+        letter-spacing: 2px;
+        border-bottom: 1px solid rgba(243, 195, 80, 0.3);
+        padding-bottom: 12px;
+    }
+
+    .close-btn {
+        position: absolute;
+        top: 12px;
+        right: 16px;
+        background: none;
+        border: none;
+        color: var(--gold-primary);
+        font-size: 26px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .close-btn:hover {
+        transform: scale(1.2) rotate(90deg);
+        color: var(--gold-light);
+    }
+
+    .menu-btn {
+        display: block;
+        background: linear-gradient(180deg, #3d2616 0%, #25160b 100%);
+        border: 1px solid var(--gold-dark);
+        padding: 12px;
+        margin: 12px 0;
+        border-radius: 8px;
+        text-decoration: none;
+        color: var(--gold-light);
+        font-weight: bold;
+        font-size: 15px;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+
+    .menu-btn:hover {
+        background: var(--gold-primary);
+        color: #1a0d05;
+        border-color: var(--gold-light);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(243, 195, 80, 0.3);
+    }
+
+    .menu-btn.logout {
+        border-color: #8b0000;
+        background: linear-gradient(180deg, #4a1010 0%, #2b0808 100%);
+        color: #ff9999;
+    }
+
+    .menu-btn.logout:hover {
+        background: #d32f2f;
+        color: #ffffff;
+        border-color: #ff6666;
+    }
+
+    /* フッター */
+    .footer-status {
+        position: relative;
+        z-index: 10;
+        text-align: center;
+        font-size: 12px;
+        color: rgba(243, 195, 80, 0.6);
+        letter-spacing: 1.5px;
+        font-family: 'Cinzel', serif;
+    }
 </style>
 </head>
 <body>
 
-<div class="title-bar">機能一覧</div>
+<div class="table-container">
+    <div class="table-line"></div>
 
-<div class="top-bar">
-    <img src="{{ url_for('static', filename='settei.webp') }}" class="settings-btn" id="settings-btn" alt="設定">
-</div>
+    <!-- HUD Header -->
+    <header class="hud-bar">
+        <div class="chip-badge" title="保有コイン">
+            <div class="chip-icon">$</div>
+            <!-- Flask / Jinja2 変数対応 -->
+            <span>{{ current_user.coins if current_user is defined and current_user.coins is defined else '1,250' }} G</span>
+        </div>
 
-<div class="game-scroll">
-    <a href="/highlow" class="game-btn highlow">ハイロー</a>
-    <a href="/blackjack" class="game-btn blackjack">ブラックジャック</a>
-    <a href="/ranking" class="game-btn ranking">ランキング</a>
-    <a href="https://chat.onl.jp/?ZV5qqFKWMj" class="game-btn chat" target="_blank">チャット</a>
-    <a href="/transfer" class="game-btn transfer">コイン譲渡</a>
-    {% if current_user.coins == 0 %}
-    <a href="/revive_game" class="game-btn revive">復活ゲー</a>
-    {% endif %}
-</div>
+        <div class="title-bar">GAME SELECTION</div>
 
-<div id="settings-popup" class="popup hidden">
-    <div class="popup-content">
-        <button class="close-btn">&times;</button>
-        <h2>メニュー</h2>
-        <a href="/" class="menu-btn">変換ツールへ</a>
-        <a href="/logout" class="menu-btn logout">ログアウト</a>
+        <div class="top-controls">
+            <!-- 設定ボタン -->
+            <button class="icon-btn" id="settings-btn" title="設定">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- グリーンボード上のカードセレクター -->
+    <div class="game-scroll-wrapper">
+        <button class="scroll-arrow left" id="scroll-left">&lt;</button>
+        <div class="game-scroll" id="game-scroll">
+            
+            <!-- ハイロー (Spades Ace) -->
+            <a href="/highlow" class="card-btn">
+                <div class="card-corner top-left black-suit">
+                    <div>A</div>
+                    <div>♠</div>
+                </div>
+                <div class="card-center">
+                    <div class="card-icon black-suit">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C9 7 4 9 4 14a8 8 0 0 0 16 0c0-5-5-7-8-12zm0 18a2 2 0 0 1-2-2h4a2 2 0 0 1-2 2z"/>
+                        </svg>
+                    </div>
+                    <div class="card-title">ハイロー</div>
+                    <div class="card-subtitle">HIGH & LOW</div>
+                </div>
+                <div class="card-corner bottom-right black-suit">
+                    <div>A</div>
+                    <div>♠</div>
+                </div>
+            </a>
+
+            <!-- ブラックジャック (Diamonds Jack) -->
+            <a href="/blackjack" class="card-btn">
+                <div class="card-corner top-left red-suit">
+                    <div>J</div>
+                    <div>♦</div>
+                </div>
+                <div class="card-center">
+                    <div class="card-icon red-suit">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2L2 12l10 10 10-10L12 2z"/>
+                        </svg>
+                    </div>
+                    <div class="card-title">ブラックジャック</div>
+                    <div class="card-subtitle">BLACKJACK 21</div>
+                </div>
+                <div class="card-corner bottom-right red-suit">
+                    <div>J</div>
+                    <div>♦</div>
+                </div>
+            </a>
+
+            <!-- ランキング (Crown King) -->
+            <a href="/ranking" class="card-btn">
+                <div class="card-corner top-left gold-suit">
+                    <div>K</div>
+                    <div>👑</div>
+                </div>
+                <div class="card-center">
+                    <div class="card-icon gold-suit">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+                        </svg>
+                    </div>
+                    <div class="card-title">ランキング</div>
+                    <div class="card-subtitle">RANKING</div>
+                </div>
+                <div class="card-corner bottom-right gold-suit">
+                    <div>K</div>
+                    <div>👑</div>
+                </div>
+            </a>
+
+            <!-- チャット (Clubs) -->
+            <a href="https://chat.onl.jp/?ZV5qqFKWMj" class="card-btn" target="_blank">
+                <div class="card-corner top-left black-suit">
+                    <div>Q</div>
+                    <div>♣</div>
+                </div>
+                <div class="card-center">
+                    <div class="card-icon black-suit">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2a6 6 0 0 0-6 6c0 2.2 1.2 4.1 3 5.2V18h6v-4.8c1.8-1.1 3-3 3-5.2a6 6 0 0 0-6-6zm-2 18h4v2h-4v-2z"/>
+                        </svg>
+                    </div>
+                    <div class="card-title">チャット</div>
+                    <div class="card-subtitle">GLOBAL CHAT</div>
+                </div>
+                <div class="card-corner bottom-right black-suit">
+                    <div>Q</div>
+                    <div>♣</div>
+                </div>
+            </a>
+
+            <!-- コイン譲渡 (Gold Coins) -->
+            <a href="/transfer" class="card-btn">
+                <div class="card-corner top-left gold-suit">
+                    <div>10</div>
+                    <div>$</div>
+                </div>
+                <div class="card-center">
+                    <div class="card-icon gold-suit">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                        </svg>
+                    </div>
+                    <div class="card-title">コイン譲渡</div>
+                    <div class="card-subtitle">TRANSFER</div>
+                </div>
+                <div class="card-corner bottom-right gold-suit">
+                    <div>10</div>
+                    <div>$</div>
+                </div>
+            </a>
+
+            <!-- 復活ゲー (Hearts Ace - Jinja2条件分岐対応) -->
+            {% if current_user is defined and current_user.coins == 0 %}
+            <a href="/revive_game" class="card-btn">
+                <span class="card-badge">CHANCE!</span>
+                <div class="card-corner top-left red-suit">
+                    <div>A</div>
+                    <div>♥</div>
+                </div>
+                <div class="card-center">
+                    <div class="card-icon red-suit">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                    </div>
+                    <div class="card-title" style="color: #2e7d32;">復活</div>
+                    <div class="card-subtitle" style="color: #2e7d32;">REVIVE GAME</div>
+                </div>
+                <div class="card-corner bottom-right red-suit">
+                    <div>A</div>
+                    <div>♥</div>
+                </div>
+            </a>
+            {% endif %}
+
+        </div>
+        <button class="scroll-arrow right" id="scroll-right">&gt;</button>
     </div>
+
+    <!-- ポップアップダイアログ -->
+    <div id="settings-popup" class="popup hidden">
+        <div class="popup-content">
+            <button class="close-btn">&times;</button>
+            <div class="popup-header">SYSTEM MENU</div>
+            <a href="/" class="menu-btn">変換ツールへ</a>
+            <a href="/logout" class="menu-btn logout">ログアウト</a>
+        </div>
+    </div>
+
+    <!-- フッター -->
+    <footer class="footer-status">
+        CASINO CLUB ROYAL • ALL RIGHTS RESERVED
+    </footer>
 </div>
 
 <script>
-document.getElementById("settings-btn").onclick = () => {
-    document.getElementById("settings-popup").classList.remove("hidden");
+// --- ポップアップ操作 ---
+const settingsBtn = document.getElementById("settings-btn");
+const settingsPopup = document.getElementById("settings-popup");
+const closeBtn = document.querySelector(".close-btn");
+
+settingsBtn.onclick = () => {
+    settingsPopup.classList.remove("hidden");
 };
-document.querySelector(".close-btn").onclick = () => {
-    document.getElementById("settings-popup").classList.add("hidden");
+
+closeBtn.onclick = () => {
+    settingsPopup.classList.add("hidden");
+};
+
+settingsPopup.onclick = (e) => {
+    if (e.target === settingsPopup) {
+        settingsPopup.classList.add("hidden");
+    }
+};
+
+// --- 横スクロール矢印ボタン ---
+const gameScroll = document.getElementById("game-scroll");
+document.getElementById("scroll-left").onclick = () => {
+    gameScroll.scrollBy({ left: -220, behavior: 'smooth' });
+};
+document.getElementById("scroll-right").onclick = () => {
+    gameScroll.scrollBy({ left: 220, behavior: 'smooth' });
 };
 </script>
 
