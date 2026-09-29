@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Ranking</title>
+<style>
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+    body { font-family: sans-serif; background-image: url('{{ url_for('static', filename='haikei_2.webp') }}'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed; color: white; text-align: center; }
+    .container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -55%); background: rgba(0,0,0,0.55); padding: 20px; border-radius: 12px; width: 90%; max-width: 450px; height: 60vh; overflow-y: auto; }
+    .rank-item { background: rgba(255,255,255,0.1); padding: 10px; margin: 6px 0; border-radius: 8px; font-size: 18px; }
+    .back-btn { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: #444; padding: 12px 20px; border-radius: 8px; text-decoration: none; color: white; font-size: 18px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>総資産ランキング</h2>
+
+    {% for u in top10 %}
+        <div class="rank-item">
+            {{ loop.index }} 位：{{ u.username }}（{{ u.coins }} コイン）
+        </div>
+    {% endfor %}
+
+    <hr style="margin: 20px 0; opacity: 0.4;">
+
+    <div class="rank-item">
+        あなたの順位：{{ my_rank }} 位（{{ current_user.coins }} コイン）
+    </div>
+</div>
+
+<a href="/games" class="back-btn">ゲーム一覧に戻る</a>
+
+</body>
+</html>
