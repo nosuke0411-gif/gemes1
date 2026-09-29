@@ -6,6 +6,7 @@ from db import get_user_by_id
 from routes.main import main_bp
 from routes.auth import auth_bp
 from routes.highlow import highlow_bp
+from routes.blackjack import blackjack_bp
 from routes.revive import revive_bp
 from routes.ranking import ranking_bp
 from routes.transfer import transfer_bp
@@ -25,6 +26,7 @@ def load_user(user_id):
 app.register_blueprint(main_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(highlow_bp)
+app.register_blueprint(blackjack_bp)
 app.register_blueprint(revive_bp)
 app.register_blueprint(ranking_bp)
 app.register_blueprint(transfer_bp)
