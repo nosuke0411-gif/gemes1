@@ -3,261 +3,948 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>High & Low</title>
+<title>High & Low - Grand VIP Casino Wide</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Montserrat:wght@500;700;800;900&display=swap" rel="stylesheet">
 <style>
-    * { box-sizing: border-box; }
-    body {
-        margin: 0;
-        padding: 20px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        background: radial-gradient(circle at center, #1e4d2b 0%, #0a2312 100%);
-        color: #ffffff;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+    :root {
+        --gold-primary: #d4af37;
+        --gold-light: #fff3a8;
+        --gold-dark: #aa7c11;
+        --felt-green: #0d4d28;
+        --felt-dark: #041f0e;
+        --wood-dark: #1d0a04;
+        --wood-light: #3d1709;
+        --card-width: 140px;
+        --card-height: 200px;
     }
 
-    .container {
+    @media (max-height: 750px) {
+        :root {
+            --card-width: 115px;
+            --card-height: 165px;
+        }
+    }
+
+    * {
+        box-sizing: border-box;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    html, body {
         width: 100%;
-        max-width: 600px;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
+        height: 100%;
+        height: 100dvh;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #05070a;
+        background-image: 
+            radial-gradient(circle at 50% 20%, #1a2638 0%, #05070a 80%);
+        color: #ffffff;
     }
 
+    .gold-text {
+        background: linear-gradient(135deg, #fff8cb 0%, #e6c865 35%, #b8860b 70%, #fff8cb 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 2px 12px rgba(212, 175, 55, 0.4);
+    }
+
+    /* 全画面横長コンテナ */
+    .app-container {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        max-width: 1500px;
+        margin: 0 auto;
+        padding: 12px 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 12px;
+        position: relative;
+    }
+
+    /* TOP BAR - 横長スリムデザイン */
     .top-bar {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: rgba(0, 0, 0, 0.4);
-        padding: 12px 20px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 215, 0, 0.3);
+        background: linear-gradient(180deg, rgba(30, 18, 10, 0.95) 0%, rgba(12, 5, 2, 0.98) 100%);
+        padding: 8px 24px;
+        border-radius: 40px;
+        border: 1.5px solid var(--gold-primary);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.2);
+        flex-shrink: 0;
     }
-    .top-bar h2 {
-        margin: 0;
+
+    .brand-title {
+        font-family: 'Cinzel', serif;
         font-size: 22px;
-    }
-    .coin-badge {
-        font-size: 18px;
-        font-weight: bold;
-        color: #ffd700;
-    }
-
-    .table-board {
-        background: rgba(0, 0, 0, 0.25);
-        border: 2px solid rgba(255, 255, 255, 0.1);
-        border-radius: 16px;
-        padding: 24px 20px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        margin: 0;
         display: flex;
-        flex-direction: column;
         align-items: center;
-        gap: 20px;
-        box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
+        gap: 10px;
     }
 
-    .hand-section {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-        width: 100%;
-    }
-    .section-title {
-        font-size: 16px;
-        color: #a0d8b3;
-        font-weight: 600;
-    }
-
-    .cards-row {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        min-height: 100px;
-        align-items: center;
-    }
-
-    .card {
-        background: #ffffff;
-        color: #111111;
-        padding: 16px 22px;
+    .vip-tag {
+        font-size: 10px;
+        background: linear-gradient(135deg, #d4af37, #aa7c11);
+        color: #000;
+        padding: 2px 8px;
         border-radius: 10px;
-        font-size: 26px;
-        font-weight: bold;
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-        min-width: 80px;
-        text-align: center;
-        animation: popIn 0.25s ease-out;
-    }
-    .card.hidden-card {
-        background: #2b3e50;
-        color: #ffffff;
-        border: 2px solid #34495e;
-    }
-    .card.win-card {
-        border: 3px solid #2ecc71;
-        box-shadow: 0 0 15px rgba(46, 204, 113, 0.6);
-    }
-    .card.lose-card {
-        border: 3px solid #e74c3c;
-        box-shadow: 0 0 15px rgba(231, 76, 60, 0.6);
+        font-weight: 900;
+        letter-spacing: 1px;
     }
 
-    @keyframes popIn {
-        from { transform: scale(0.7); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
+    .top-stats {
+        display: flex;
+        align-items: center;
+        gap: 20px;
     }
 
-    .multiplier-badge {
-        font-size: 18px;
-        font-weight: bold;
-        color: #00f5d4;
-        background: rgba(0, 0, 0, 0.4);
-        padding: 8px 16px;
+    .stat-badge {
+        display: flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.65);
+        padding: 6px 16px;
         border-radius: 20px;
-        border: 1px solid rgba(0, 245, 212, 0.3);
-    }
-    .multiplier-badge span {
-        color: #ffd700;
-        font-size: 20px;
-    }
-    .lose-text {
-        color: #e74c3c;
-        border-color: rgba(231, 76, 60, 0.3);
+        border: 1px solid rgba(212, 175, 55, 0.4);
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
     }
 
-    .controls {
+    .stat-label {
+        font-size: 11px;
+        color: #999;
+        margin-right: 8px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+        font-size: 18px;
+        font-weight: 800;
+        color: #ffd700;
+    }
+
+    /* MAIN CONTENT AREA - 左右分割横広レイアウト */
+    .main-layout {
+        display: flex;
+        flex: 1;
+        gap: 16px;
+        min-height: 0;
+        align-items: stretch;
+    }
+
+    /* 左側: CASINO TABLE BOARD */
+    .table-board {
+        position: relative;
+        flex: 1.8;
+        background: radial-gradient(ellipse at center, #115c2e 0%, #07381a 65%, #021a0a 100%);
+        border-radius: 60px;
+        padding: 16px;
+        border: 14px solid var(--wood-dark);
+        outline: 3px solid var(--gold-primary);
+        box-shadow: 
+            0 0 0 3px #1a0a03,
+            0 15px 40px rgba(0,0,0,0.95),
+            inset 0 0 60px rgba(0,0,0,0.85);
         display: flex;
         flex-direction: column;
-        gap: 12px;
         align-items: center;
-        width: 100%;
+        justify-content: space-between;
+        min-height: 0;
     }
 
-    .bet-area {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
+    .table-board::before {
+        content: '';
+        position: absolute;
+        top: 8px; left: 8px; right: 8px; bottom: 8px;
+        border: 2px dashed rgba(212, 175, 55, 0.3);
+        border-radius: 46px;
+        pointer-events: none;
     }
-    input[type="number"] {
-        padding: 10px;
-        font-size: 18px;
-        width: 110px;
-        border-radius: 8px;
-        border: 1px solid #444;
-        background: #111;
-        color: #fff;
+
+    .table-logo {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-family: 'Cinzel', serif;
+        font-size: 32px;
+        font-weight: 900;
+        color: rgba(212, 175, 55, 0.06);
+        letter-spacing: 8px;
+        pointer-events: none;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    /* CARDS ARENA */
+    .arena {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 40px;
+        z-index: 2;
+        margin: auto 0;
+    }
+
+    .card-slot {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .slot-label {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        color: rgba(255, 215, 0, 0.85);
+        text-transform: uppercase;
+        background: rgba(0,0,0,0.5);
+        padding: 3px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(212, 175, 55, 0.3);
+    }
+
+    /* 3D LUXURY REALISTIC CARDS */
+    .card-container {
+        width: var(--card-width);
+        height: var(--card-height);
+        perspective: 1200px;
+    }
+
+    .card-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
         text-align: center;
+        transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transform-style: preserve-3d;
+        border-radius: 12px;
+        box-shadow: 0 12px 25px rgba(0,0,0,0.7);
     }
 
-    .btn {
-        padding: 12px 24px;
-        font-size: 18px;
-        font-weight: bold;
-        border-radius: 8px;
-        border: none;
-        cursor: pointer;
-        transition: transform 0.1s, opacity 0.2s;
+    .card-container.flipped .card-inner {
+        transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+        position: absolute;
         width: 100%;
-        max-width: 280px;
+        height: 100%;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+        border-radius: 12px;
+        overflow: hidden;
     }
-    .btn:active { transform: scale(0.96); }
-    .btn-start { background: #ffd700; color: #111; }
-    .btn-high { background: #e74c3c; color: #fff; flex: 1; max-width: 135px; }
-    .btn-low { background: #3498db; color: #fff; flex: 1; max-width: 135px; }
-    .btn-cashout { background: #2ecc71; color: #111; }
-    .btn-back { background: #555555; color: #fff; margin-top: 6px; }
 
-    .action-row {
+    .card-front {
+        background: #ffffff;
+        background-image: linear-gradient(135deg, #ffffff 0%, #f0f0f4 100%);
+        border: 2px solid #ddd;
         display: flex;
-        gap: 12px;
-        width: 100%;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 8px 10px;
+        color: #111;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .card-front.red { color: #d62828; }
+    .card-front.black { color: #1a1a1a; }
+
+    .card-corner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        line-height: 1;
+        font-weight: 800;
+    }
+
+    .card-corner.top-left { align-self: flex-start; }
+    .card-corner.bottom-right { align-self: flex-end; transform: rotate(180deg); }
+
+    .corner-val { font-size: 18px; font-family: 'Montserrat', sans-serif; font-weight: 900; }
+    .corner-suit { font-size: 15px; margin-top: 1px; }
+
+    .card-center {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 52px;
+        display: flex;
+        align-items: center;
         justify-content: center;
-        max-width: 280px;
+    }
+
+    .card-back {
+        background: #800a28;
+        background-image: radial-gradient(circle at 50% 50%, #a81339 0%, #4a0014 100%);
+        border: 3px solid #ffffff;
+        transform: rotateY(180deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card-back-pattern {
+        width: calc(100% - 10px);
+        height: calc(100% - 10px);
+        border: 1px solid var(--gold-primary);
+        border-radius: 8px;
+        background-color: #54061a;
+        background-image: repeating-linear-gradient(45deg, rgba(212, 175, 55, 0.2) 0, rgba(212, 175, 55, 0.2) 10px, transparent 0, transparent 20px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card-back-emblem {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 1.5px solid var(--gold-primary);
+        background: rgba(0,0,0,0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gold-primary);
+        font-size: 20px;
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+    }
+
+    .card-container.win .card-inner { box-shadow: 0 0 25px #2ecc71, 0 0 10px #2ecc71; }
+    .card-container.lose .card-inner { box-shadow: 0 0 25px #e74c3c, 0 0 10px #e74c3c; }
+
+    /* MULTIPLIER BADGE & RESULT BANNER */
+    .multiplier-badge {
+        background: rgba(10, 10, 12, 0.85);
+        border: 1px solid var(--gold-primary);
+        padding: 6px 24px;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 700;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+    }
+
+    .multiplier-val {
+        font-size: 20px;
+        color: #ffd700;
+        font-weight: 900;
     }
 
     .result-banner {
-        font-size: 18px;
-        font-weight: bold;
+        font-size: 14px;
+        font-weight: 700;
         text-align: center;
-        padding: 12px 16px;
-        border-radius: 8px;
-        background: rgba(0, 0, 0, 0.6);
-        color: #ffd700;
-        min-height: 52px;
+        padding: 8px 16px;
+        border-radius: 12px;
+        background: rgba(10, 10, 15, 0.85);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        color: #ffffff;
+        width: 90%;
+        min-height: 42px;
         display: flex;
         align-items: center;
         justify-content: center;
+        z-index: 2;
+        backdrop-filter: blur(4px);
+    }
+
+    /* 右側: CONTROLS PANEL */
+    .controls-panel {
+        flex: 1;
+        background: linear-gradient(180deg, rgba(20, 15, 12, 0.95) 0%, rgba(8, 5, 3, 0.98) 100%);
+        padding: 18px 20px;
+        border-radius: 35px;
+        border: 1.5px solid rgba(212, 175, 55, 0.4);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .panel-header {
+        font-family: 'Cinzel', serif;
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--gold-primary);
+        text-align: center;
+        letter-spacing: 2px;
+        border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        padding-bottom: 6px;
+    }
+
+    .chip-selector-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #aaa;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        text-align: center;
+    }
+
+    .chip-selector {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .chip {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 4px dashed #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 10px;
+        color: #fff;
+        cursor: pointer;
+        box-shadow: 0 5px 10px rgba(0,0,0,0.6);
+        transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .chip:hover { transform: translateY(-2px) scale(1.05); }
+    .chip:active { transform: scale(0.95); }
+
+    .chip-1 { background: radial-gradient(circle, #3498db, #1d6fa5); }
+    .chip-5 { background: radial-gradient(circle, #e74c3c, #962d22); }
+    .chip-25 { background: radial-gradient(circle, #2ecc71, #1b8a4a); }
+    .chip-100 { background: radial-gradient(circle, #34495e, #1a252f); }
+    .chip-500 { background: radial-gradient(circle, #9b59b6, #5e3370); }
+
+    .bet-input-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(0,0,0,0.7);
+        padding: 6px 14px;
+        border-radius: 25px;
+        border: 1px solid rgba(212, 175, 55, 0.4);
+    }
+
+    .bet-input-container input {
+        background: transparent;
+        border: none;
+        color: #ffd700;
+        font-size: 20px;
+        font-weight: 900;
+        width: 100px;
+        text-align: center;
+        outline: none;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 12px;
         width: 100%;
+    }
+
+    .btn {
+        padding: 14px 16px;
+        font-size: 15px;
+        font-weight: 900;
+        border-radius: 30px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    }
+
+    .btn:active:not(:disabled) { transform: translateY(2px); }
+
+    .btn-gold {
+        background: linear-gradient(135deg, #ffe066 0%, #d4af37 50%, #aa7c11 100%);
+        color: #1a0f00;
+        width: 100%;
+    }
+
+    .btn-high {
+        background: linear-gradient(135deg, #ff5252 0%, #c62828 100%);
+        color: #ffffff;
+        flex: 1;
+    }
+
+    .btn-low {
+        background: linear-gradient(135deg, #448aff 0%, #1565c0 100%);
+        color: #ffffff;
+        flex: 1;
+    }
+
+    .btn-cashout {
+        background: linear-gradient(135deg, #69f0ae 0%, #2e7d32 100%);
+        color: #052110;
+        width: 100%;
+    }
+
+    .btn-sub {
+        background: rgba(255, 255, 255, 0.08);
+        color: #aaa;
+        font-size: 11px;
+        padding: 6px 14px;
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        cursor: pointer;
+        text-align: center;
+        transition: background 0.2s;
+    }
+
+    .btn-sub:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+
+    /* CANVAS FOR SPARKLING PARTICLES */
+    #fx-canvas {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        pointer-events: none;
+        z-index: 99;
     }
 </style>
 </head>
 <body>
 
-<div class="container" id="game">
-    <div class="top-bar">
-        <h2>High & Low</h2>
-        <div class="coin-badge">💰 <span>{{ coins }}</span> コイン</div>
-    </div>
+<canvas id="fx-canvas"></canvas>
 
-    <div class="table-board">
-        <div class="hand-section">
-            <div class="section-title">最初のカード</div>
-            <div class="cards-row">
-                <div class="card">{{ suit_emoji }} {{ value }}</div>
-                <div class="card hidden-card">❓</div>
+<div class="app-container" id="game-app">
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <h1 class="brand-title gold-text">
+            👑 HIGH & LOW <span class="vip-tag">VIP WIDE</span>
+        </h1>
+        <div class="top-stats">
+            <div class="stat-badge">
+                <span class="stat-label">STREAK:</span>
+                <span class="stat-value" id="streak-display">0</span>
+            </div>
+            <div class="stat-badge">
+                <span class="stat-label">CHIPS:</span>
+                <span class="stat-value" id="coin-display">1,000</span>
             </div>
         </div>
     </div>
 
-    <div class="result-banner">ベット額を設定して「ゲーム開始」を押してください</div>
+    <!-- MAIN LAYOUT (LEFT: TABLE, RIGHT: CONTROLS) -->
+    <div class="main-layout">
+        <!-- LEFT: CASINO TABLE -->
+        <div class="table-board">
+            <div class="table-logo">ROYAL HIGH & LOW</div>
 
-    <div class="controls">
-        <div class="bet-area">
-            <span>ベット額:</span>
-            <input id="bet" type="number" value="10" min="1" max="{{ coins }}">
+            <!-- MULTIPLIER BADGE -->
+            <div class="multiplier-badge">
+                <span>CURRENT MULTIPLIER:</span>
+                <span class="multiplier-val" id="mult-display">x1.95</span>
+            </div>
+
+            <!-- CARDS ARENA -->
+            <div class="arena">
+                <!-- CURRENT BASE CARD -->
+                <div class="card-slot">
+                    <div class="slot-label">BASE CARD</div>
+                    <div class="card-container flipped" id="card-base-container">
+                        <div class="card-inner">
+                            <div class="card-front red" id="card-base-front">
+                                <div class="card-corner top-left">
+                                    <span class="corner-val" id="base-val-tl">7</span>
+                                    <span class="corner-suit" id="base-suit-tl">♥</span>
+                                </div>
+                                <div class="card-center" id="base-suit-center">♥</div>
+                                <div class="card-corner bottom-right">
+                                    <span class="corner-val" id="base-val-br">7</span>
+                                    <span class="corner-suit" id="base-suit-br">♥</span>
+                                </div>
+                            </div>
+                            <div class="card-back">
+                                <div class="card-back-pattern">
+                                    <div class="card-back-emblem">👑</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEXT CARD -->
+                <div class="card-slot">
+                    <div class="slot-label">NEXT CARD</div>
+                    <div class="card-container" id="card-next-container">
+                        <div class="card-inner">
+                            <div class="card-front black" id="card-next-front">
+                                <div class="card-corner top-left">
+                                    <span class="corner-val" id="next-val-tl">?</span>
+                                    <span class="corner-suit" id="next-suit-tl">♠</span>
+                                </div>
+                                <div class="card-center" id="next-suit-center">♠</div>
+                                <div class="card-corner bottom-right">
+                                    <span class="corner-val" id="next-val-br">?</span>
+                                    <span class="corner-suit" id="next-suit-br">♠</span>
+                                </div>
+                            </div>
+                            <div class="card-back">
+                                <div class="card-back-pattern">
+                                    <div class="card-back-emblem">👑</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RESULT BANNER -->
+            <div class="result-banner" id="result-message">
+                ベット額を選択して「START GAME」を押してください
+            </div>
         </div>
-        <button class="btn btn-start" onclick="startGame({{ value }}, '{{ suit }}')">ゲーム開始</button>
-        <button class="btn btn-back" onclick="location.href='/games'">ゲーム一覧へ戻る</button>
+
+        <!-- RIGHT: CONTROLS PANEL -->
+        <div class="controls-panel">
+            <div class="panel-header">BETTING CONTROLS</div>
+
+            <!-- CHIP SELECTOR -->
+            <div>
+                <div class="chip-selector-label">SELECT CHIP TO ADD</div>
+                <div class="chip-selector" id="chip-area">
+                    <div class="chip chip-1" onclick="addBet(1)">$1</div>
+                    <div class="chip chip-5" onclick="addBet(5)">$5</div>
+                    <div class="chip chip-25" onclick="addBet(25)">$25</div>
+                    <div class="chip chip-100" onclick="addBet(100)">$100</div>
+                    <div class="chip chip-500" onclick="addBet(500)">$500</div>
+                </div>
+            </div>
+
+            <!-- BET INPUT -->
+            <div class="bet-input-container">
+                <span style="color:#aaa; font-weight:800; font-size:12px;">BET AMOUNT:</span>
+                <input type="number" id="bet-amount" value="10" min="1">
+                <button class="btn-sub" onclick="clearBet()">CLEAR</button>
+            </div>
+
+            <!-- ACTION BUTTONS -->
+            <div id="action-controls" style="display: flex; flex-direction: column; gap: 8px;">
+                <button class="btn btn-gold" id="start-btn" onclick="handleStartGame()">
+                    ✨ START GAME
+                </button>
+
+                <div class="btn-group" id="choice-btns" style="display: none;">
+                    <button class="btn btn-high" onclick="handlePlay('HIGH')">
+                        ▲ HIGH
+                    </button>
+                    <button class="btn btn-low" onclick="handlePlay('LOW')">
+                        ▼ LOW
+                    </button>
+                </div>
+
+                <button class="btn btn-cashout" id="cashout-btn" style="display: none;" onclick="handleCashout()">
+                    💰 CASH OUT (<span id="win-amount">$0</span>)
+                </button>
+            </div>
+
+            <button class="btn-sub" onclick="history.back()">◀ ゲーム一覧へ戻る</button>
+        </div>
     </div>
 </div>
 
 <script>
-async function startGame(current_value, current_suit) {
-    const bet = Number(document.getElementById("bet").value);
-    if (!bet || bet <= 0) {
-        alert("正しいベット額を入力してください");
+/**
+ * GAME STATE MANAGEMENT (NO AUDIO)
+ */
+const SUITS = [
+    { symbol: '♠', name: 'spades', color: 'black' },
+    { symbol: '♥', name: 'hearts', color: 'red' },
+    { symbol: '♦', name: 'diamonds', color: 'red' },
+    { symbol: '♣', name: 'clubs', color: 'black' }
+];
+
+const VAL_MAP = {
+    1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 
+    8: '8', 9: '9', 10: '10', 11: 'J', 12: 'Q', 13: 'K'
+};
+
+let gameState = {
+    coins: 1000,
+    currentBet: 10,
+    baseCard: { value: 7, suit: SUITS[1] },
+    nextCard: null,
+    streak: 0,
+    multiplier: 1.95,
+    isPlaying: false
+};
+
+// INITIALIZE INTERFACE
+window.onload = function() {
+    initFxCanvas();
+    try {
+        const serverCoins = parseInt("{{ coins }}");
+        if (!isNaN(serverCoins)) gameState.coins = serverCoins;
+        
+        const serverVal = parseInt("{{ value }}");
+        if (!isNaN(serverVal)) gameState.baseCard.value = serverVal;
+    } catch(e) {}
+
+    updateCardUI('base', gameState.baseCard.value, gameState.baseCard.suit);
+    updateCoinsUI();
+};
+
+function updateCoinsUI() {
+    document.getElementById('coin-display').textContent = gameState.coins.toLocaleString();
+    document.getElementById('streak-display').textContent = gameState.streak;
+}
+
+function updateCardUI(target, val, suitObj) {
+    const displayVal = VAL_MAP[val] || val;
+    const isRed = suitObj.color === 'red';
+    
+    const frontEl = document.getElementById(`card-${target}-front`);
+    frontEl.className = `card-front ${isRed ? 'red' : 'black'}`;
+    
+    document.getElementById(`${target}-val-tl`).textContent = displayVal;
+    document.getElementById(`${target}-suit-tl`).textContent = suitObj.symbol;
+    document.getElementById(`${target}-suit-center`).textContent = suitObj.symbol;
+    document.getElementById(`${target}-val-br`).textContent = displayVal;
+    document.getElementById(`${target}-suit-br`).textContent = suitObj.symbol;
+}
+
+function addBet(amount) {
+    if (gameState.isPlaying) return;
+    const input = document.getElementById('bet-amount');
+    let current = parseInt(input.value) || 0;
+    input.value = Math.min(gameState.coins, current + amount);
+}
+
+function clearBet() {
+    if (gameState.isPlaying) return;
+    document.getElementById('bet-amount').value = 0;
+}
+
+/**
+ * STREAMING_CHUNK:Handling game start and fallback logic...
+ */
+async function handleStartGame() {
+    const betInput = parseInt(document.getElementById('bet-amount').value);
+    if (!betInput || betInput <= 0 || betInput > gameState.coins) {
+        setMessage("正しいベット額を入力してください");
         return;
     }
 
-    const res = await fetch("/highlow_start", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ current_value, current_suit, bet })
-    });
-    const data = await res.json();
-    document.getElementById("game").innerHTML = data.html;
+    gameState.currentBet = betInput;
+    gameState.coins -= betInput;
+    gameState.streak = 0;
+    gameState.isPlaying = true;
+    updateCoinsUI();
+
+    // Reset slots
+    document.getElementById('card-next-container').classList.remove('flipped', 'win', 'lose');
+    document.getElementById('card-base-container').classList.remove('win', 'lose');
+    
+    try {
+        const response = await fetch("/highlow_start", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ 
+                current_value: gameState.baseCard.value, 
+                current_suit: gameState.baseCard.suit.name, 
+                bet: gameState.currentBet 
+            })
+        });
+        if (response.ok) {
+            const data = await response.json();
+            if(data.html) {
+                document.body.innerHTML = data.html;
+                return;
+            }
+        }
+    } catch(e) {}
+
+    // Standalone fallback
+    gameState.baseCard = getRandomCard();
+    updateCardUI('base', gameState.baseCard.value, gameState.baseCard.suit);
+    document.getElementById('card-base-container').classList.add('flipped');
+
+    // Toggle Controls
+    document.getElementById('start-btn').style.display = 'none';
+    document.getElementById('chip-area').style.pointerEvents = 'none';
+    document.getElementById('bet-amount').disabled = true;
+    document.getElementById('choice-btns').style.display = 'flex';
+    document.getElementById('cashout-btn').style.display = 'block';
+    
+    updateCashoutBtn();
+    setMessage("「HIGH」か「LOW」かを選択してください");
 }
 
-async function play(choice) {
-    const res = await fetch("/highlow_play2", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ choice })
-    });
-    const data = await res.json();
-    document.getElementById("game").innerHTML = data.html;
+/**
+ * STREAMING_CHUNK:Handling round choices and win evaluation...
+ */
+async function handlePlay(choice) {
+    if (!gameState.isPlaying) return;
+
+    gameState.nextCard = getRandomCard();
+    updateCardUI('next', gameState.nextCard.value, gameState.nextCard.suit);
+    const nextContainer = document.getElementById('card-next-container');
+    nextContainer.classList.add('flipped');
+
+    const isWin = (choice === 'HIGH' && gameState.nextCard.value >= gameState.baseCard.value) ||
+                  (choice === 'LOW' && gameState.nextCard.value <= gameState.baseCard.value);
+
+    try {
+        const response = await fetch("/highlow_play2", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ choice })
+        });
+        if (response.ok) {
+            const data = await response.json();
+            if (data.html) {
+                document.body.innerHTML = data.html;
+                return;
+            }
+        }
+    } catch(e) {}
+
+    setTimeout(() => {
+        if (isWin) {
+            spawnParticles();
+            gameState.streak++;
+            nextContainer.classList.add('win');
+            
+            const currentWin = Math.floor(gameState.currentBet * Math.pow(1.95, gameState.streak));
+            setMessage(`🎉 WIN! ${gameState.streak}連勝中! (獲得権: $${currentWin})`);
+            
+            setTimeout(() => {
+                gameState.baseCard = gameState.nextCard;
+                updateCardUI('base', gameState.baseCard.value, gameState.baseCard.suit);
+                nextContainer.classList.remove('flipped', 'win');
+                updateCashoutBtn();
+                updateCoinsUI();
+            }, 1000);
+
+        } else {
+            nextContainer.classList.add('lose');
+            setMessage(`💥 LOSE... 残念！カードは [ ${VAL_MAP[gameState.nextCard.value]} ] でした`);
+            endGame(false);
+        }
+    }, 500);
 }
 
-function cashout() {
-    const btn = document.getElementById('cashout_btn');
-    if (btn) btn.disabled = true;
-    location.href = '/highlow_cashout';
+function handleCashout() {
+    if (!gameState.isPlaying || gameState.streak === 0) return;
+
+    const winAmount = Math.floor(gameState.currentBet * Math.pow(1.95, gameState.streak));
+    gameState.coins += winAmount;
+    spawnParticles();
+    
+    try {
+        fetch('/highlow_cashout').then(res => {
+            if (res.redirected) window.location.href = res.url;
+        });
+    } catch(e) {}
+
+    setMessage(`💰 CASH OUT! $${winAmount} を獲得しました！`);
+    updateCoinsUI();
+    endGame(true);
+}
+
+function endGame(isWin) {
+    gameState.isPlaying = false;
+    document.getElementById('start-btn').style.display = 'block';
+    document.getElementById('chip-area').style.pointerEvents = 'auto';
+    document.getElementById('bet-amount').disabled = false;
+    document.getElementById('choice-btns').style.display = 'none';
+    document.getElementById('cashout-btn').style.display = 'none';
+}
+
+function updateCashoutBtn() {
+    const winAmount = Math.floor(gameState.currentBet * Math.pow(1.95, gameState.streak || 1));
+    document.getElementById('win-amount').textContent = `$${winAmount}`;
+}
+
+function setMessage(msg) {
+    document.getElementById('result-message').textContent = msg;
+}
+
+function getRandomCard() {
+    const suit = SUITS[Math.floor(Math.random() * SUITS.length)];
+    const value = Math.floor(Math.random() * 13) + 1;
+    return { suit, value };
+}
+
+/**
+ * STREAMING_CHUNK:Rendering visual gold particle effects...
+ */
+let canvas, ctx, particles = [];
+
+function initFxCanvas() {
+    canvas = document.getElementById('fx-canvas');
+    ctx = canvas.getContext('2d');
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    requestAnimationFrame(renderParticles);
+}
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+function spawnParticles() {
+    for (let i = 0; i < 50; i++) {
+        particles.push({
+            x: canvas.width * 0.4,
+            y: canvas.height * 0.5,
+            vx: (Math.random() - 0.5) * 14,
+            vy: (Math.random() - 0.7) * 14,
+            size: Math.random() * 6 + 3,
+            color: `hsl(${Math.random() * 20 + 40}, 100%, ${Math.random() * 30 + 50}%)`,
+            alpha: 1,
+            decay: Math.random() * 0.02 + 0.015
+        });
+    }
+}
+
+function renderParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.3;
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0) {
+            particles.splice(i, 1);
+            continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+    requestAnimationFrame(renderParticles);
 }
 </script>
-
 </body>
 </html>
