@@ -250,17 +250,94 @@ def highlow_cashout():
     session.pop("hl_current_suit", None)
 
     return f"""
-    <div class="top-bar">
-        <h2>High & Low</h2>
-        <div class="coin-badge">💰 <span>{coins}</span> コイン</div>
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High & Low - 払い戻し</title>
+    <style>
+        * {{ box-sizing: border-box; }}
+        body {{
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: radial-gradient(circle at center, #1e4d2b 0%, #0a2312 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }}
+        .container {{
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }}
+        .top-bar {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }}
+        .top-bar h2 {{ margin: 0; font-size: 22px; }}
+        .coin-badge {{ font-size: 18px; font-weight: bold; color: #ffd700; }}
+        .table-board {{
+            background: rgba(0, 0, 0, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }}
+        .controls {{
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+            width: 100%;
+        }}
+        .btn {{
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            width: 100%;
+            max-width: 280px;
+        }}
+        .btn:active {{ transform: scale(0.96); }}
+        .btn-start {{ background: #ffd700; color: #111; }}
+        .btn-back {{ background: #555555; color: #fff; }}
+    </style>
+    </head>
+    <body>
+    <div class="container">
+        <div class="top-bar">
+            <h2>High & Low</h2>
+            <div class="coin-badge">💰 <span>{coins}</span> コイン</div>
+        </div>
+        <div class="table-board">
+            <h2 style="color: #ffd700; margin: 0; font-size: 26px;">💰 払い戻し完了！</h2>
+            <p style="font-size: 24px; margin: 10px 0; font-weight: bold; color: #2ecc71;">+<strong>{payout}</strong> コイン 獲得</p>
+            <p style="color: #a0d8b3; margin: 0; font-size: 18px;">現在の所持コイン: <strong>{coins}</strong> コイン</p>
+        </div>
+        <div class="controls">
+            <button class="btn btn-start" onclick="location.href='/highlow'">新しくゲームを始める</button>
+            <button class="btn btn-back" onclick="location.href='/games'">ゲーム一覧へ戻る</button>
+        </div>
     </div>
-    <div class="table-board" style="text-align: center; padding: 40px 20px;">
-        <h2 style="color: #ffd700; margin-bottom: 10px;">💰 払い戻し完了！</h2>
-        <p style="font-size: 22px; margin: 15px 0;">+<strong>{payout}</strong> コイン 獲得</p>
-        <p style="color: #a0d8b3;">現在の所持コイン: {coins}</p>
-    </div>
-    <div class="controls" style="margin-top: 20px;">
-        <button class="btn btn-start" onclick="location.href='/highlow'">新しくゲームを始める</button>
-        <button class="btn btn-back" onclick="location.href='/games'">ゲーム一覧へ戻る</button>
-    </div>
+    </body>
+    </html>
     """
