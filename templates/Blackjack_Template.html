@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blackjack</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background: radial-gradient(circle at center, #1e4d2b 0%, #0a2312 100%);
+        color: #ffffff;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 600px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.4);
+        padding: 12px 20px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 215, 0, 0.3);
+    }
+    .coin-badge {
+        font-size: 18px;
+        font-weight: bold;
+        color: #ffd700;
+    }
+
+    .table-board {
+        background: rgba(0, 0, 0, 0.25);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .hand-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+    .section-title {
+        font-size: 16px;
+        color: #a0d8b3;
+        font-weight: 600;
+    }
+
+    .cards-row {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        min-height: 90px;
+    }
+
+    .card {
+        background: #ffffff;
+        color: #111111;
+        padding: 12px 18px;
+        border-radius: 8px;
+        font-size: 22px;
+        font-weight: bold;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        min-width: 60px;
+        text-align: center;
+        animation: popIn 0.25s ease-out;
+    }
+    .card.hidden-card {
+        background: #2b3e50;
+        color: #ffffff;
+        border: 2px solid #34495e;
+    }
+
+    @keyframes popIn {
+        from { transform: scale(0.7); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .bet-area {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    input[type="number"] {
+        padding: 10px;
+        font-size: 18px;
+        width: 110px;
+        border-radius: 8px;
+        border: 1px solid #444;
+        background: #111;
+        color: #fff;
+        text-align: center;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.1s, opacity 0.2s;
+        width: 100%;
+        max-width: 220px;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn-start { background: #ffd700; color: #111; }
+    .btn-hit { background: #3498db; color: #fff; }
+    .btn-stand { background: #e74c3c; color: #fff; }
+    .btn-back { background: #555555; color: #fff; margin-top: 10px; }
+
+    .action-row {
+        display: flex;
+        gap: 12px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .result-banner {
+        font-size: 20px;
+        font-weight: bold;
+        text-align: center;
+        padding: 12px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.6);
+        color: #ffd700;
+        min-height: 52px;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="top-bar">
+        <h2>ブラックジャック</h2>
+        <div class="coin-badge">💰 <span id="coin-count">{{ coins }}</span> コイン</div>
+    </div>
+
+    <div class="table-board">
+        <div class="hand-section">
+            <div class="section-title">ディーラーの手札 [<span id="dealer-total">?</span>]</div>
+            <div class="cards-row" id="dealer-cards">
+                <div class="card hidden-card">❓</div>
+                <div class="card hidden-card">❓</div>
+            </div>
+        </div>
+
+        <div class="hand-section">
+            <div class="section-title">プレイヤーの手札 [<span id="player-total">0</span>]</div>
+            <div class="cards-row" id="player-cards"></div>
+        </div>
+    </div>
+
+    <div class="result-banner" id="result-message">ベット額を決めて「勝負開始」を押してください</div>
+
+    <div class="controls">
+        <div id="bet-controls" class="bet-area">
+            <span>ベット額:</span>
+            <input type="number" id="bet-input" value="10" min="1" max="{{ coins }}">
+            <button class="btn btn-start" onclick="startGame()">勝負開始</button>
+        </div>
+
+        <div id="game-actions" class="action-row" style="display: none;">
+            <button class="btn btn-hit" onclick="hit()">Hit (引く)</button>
+            <button class="btn btn-stand" onclick="stand()">Stand (勝負)</button>
+        </div>
+
+        <button class="btn btn-back" onclick="location.href='/games'">ゲーム一覧へ戻る</button>
+    </div>
+</div>
+
+<script>
+    let isPlaying = false;
+
+    function renderCards(containerId, cards) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = "";
+        cards.forEach(cardStr => {
+            const div = document.createElement("div");
+            div.className = cardStr === "❓" ? "card hidden-card" : "card";
+            div.innerText = cardStr;
+            container.appendChild(div);
+        });
+    }
+
+    async function startGame() {
+        const bet = parseInt(document.getElementById("bet-input").value);
+        if (!bet || bet <= 0) {
+            alert("正しいベット額を入力してください");
+            return;
+        }
+
+        const res = await fetch("/blackjack/start", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ bet })
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+            document.getElementById("result-message").innerText = data.error || "エラーが発生しました";
+            return;
+        }
+
+        document.getElementById("coin-count").innerText = data.coins;
+        document.getElementById("player-total").innerText = data.player_total;
+        document.getElementById("dealer-total").innerText = data.dealer_total;
+        renderCards("player-cards", data.player_hand);
+        renderCards("dealer-cards", data.dealer_hand);
+
+        if (data.game_over) {
+            // ナチュラルブラックジャックで即時終了した場合
+            document.getElementById("result-message").innerText = data.message;
+            document.getElementById("bet-controls").style.display = "flex";
+            document.getElementById("game-actions").style.display = "none";
+        } else {
+            document.getElementById("result-message").innerText = "Hit か Stand を選択してください";
+            document.getElementById("bet-controls").style.display = "none";
+            document.getElementById("game-actions").style.display = "flex";
+        }
+    }
+
+    async function hit() {
+        const res = await fetch("/blackjack/hit", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"}
+        });
+        const data = await res.json();
+        if (!data.success) return;
+
+        document.getElementById("player-total").innerText = data.player_total;
+        renderCards("player-cards", data.player_hand);
+
+        if (data.game_over) {
+            document.getElementById("coin-count").innerText = data.coins;
+            document.getElementById("dealer-total").innerText = data.dealer_total;
+            renderCards("dealer-cards", data.dealer_hand);
+            document.getElementById("result-message").innerText = data.message;
+            document.getElementById("bet-controls").style.display = "flex";
+            document.getElementById("game-actions").style.display = "none";
+        }
+    }
+
+    async function stand() {
+        const res = await fetch("/blackjack/stand", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"}
+        });
+        const data = await res.json();
+        if (!data.success) return;
+
+        document.getElementById("coin-count").innerText = data.coins;
+        document.getElementById("player-total").innerText = data.player_total;
+        document.getElementById("dealer-total").innerText = data.dealer_total;
+        renderCards("player-cards", data.player_hand);
+        renderCards("dealer-cards", data.dealer_hand);
+        document.getElementById("result-message").innerText = data.message;
+
+        document.getElementById("bet-controls").style.display = "flex";
+        document.getElementById("game-actions").style.display = "none";
+    }
+</script>
+</body>
+</html>
