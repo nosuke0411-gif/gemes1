@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>新規登録</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f7f7f7; }
+        .container { text-align: center; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 0 15px rgba(0,0,0,0.1); width: 90%; max-width: 400px; }
+        input { width: 100%; padding: 14px; margin-top: 10px; font-size: 18px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; margin-top: 20px; font-size: 18px; border: none; border-radius: 8px; background: #28a745; color: white; cursor: pointer; }
+        a { display: block; margin-top: 15px; color: #007bff; text-decoration: none; }
+        .error { color: red; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>新規登録</h2>
+    {% if error %}
+        <p class="error">そのユーザー名は既に使われています。</p>
+    {% endif %}
+    <form method="POST">
+        <input type="text" name="username" placeholder="ユーザー名" required>
+        <input type="password" name="password" placeholder="パスワード" required>
+        <button type="submit">登録する</button>
+    </form>
+    <a href="/login">ログイン画面へ</a>
+</div>
+
+</body>
+</html>
