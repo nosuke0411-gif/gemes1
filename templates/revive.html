@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>復活ゲーム</title>
+<style>
+    body { text-align: center; font-family: sans-serif; padding-top: 40px; }
+    .box { display: inline-block; padding: 20px; border: 2px solid #333; border-radius: 10px; margin: 10px; font-size: 32px; width: 120px; }
+    button { padding: 14px 30px; font-size: 20px; border: none; background: #007bff; color: white; border-radius: 8px; cursor: pointer; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<h2>復活ゲーム（乱数で復活コインを決めよう）</h2>
+
+<div>
+    <div class="box" id="left">?</div>
+    <span style="font-size:32px;">×</span>
+    <div class="box" id="right">?</div>
+</div>
+
+<p style="font-size:24px; margin-top:20px;">復活コイン: <span id="result">0</span></p>
+
+<button id="startBtn" onclick="startGame()">スタート</button>
+<button id="stopBtn" onclick="stopGame()" style="display:none;">ストップ</button>
+<button id="backBtn" onclick="location.href='/games'" style="display:none;">ゲーム一覧へ戻る</button>
+
+<script>
+let intervalId = null;
+let finalResult = 0;
+
+function startGame() {
+    document.getElementById("startBtn").style.display = "none";
+    document.getElementById("stopBtn").style.display = "inline-block";
+
+    intervalId = setInterval(() => {
+        let left = Math.floor(Math.random() * 100) + 1;
+        let right = Math.floor(Math.random() * 100) + 1;
+        finalResult = left * right;
+
+        document.getElementById("left").innerText = left;
+        document.getElementById("right").innerText = right;
+        document.getElementById("result").innerText = finalResult;
+    }, 80);
+}
+
+function stopGame() {
+    clearInterval(intervalId);
+
+    document.getElementById("stopBtn").style.display = "none";
+    document.getElementById("backBtn").style.display = "inline-block";
+
+    fetch("/revive", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+        body: JSON.stringify({ score: finalResult })
+    }).then(r => r.json()).then(data => {
+        alert(finalResult + " コイン復活しました！");
+    });
+}
+</script>
+
+</body>
+</html>
