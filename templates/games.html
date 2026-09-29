@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Games</title>
+<style>
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: #0d0d0d; font-family: sans-serif; }
+    .title-bar { text-align: center; font-size: 32px; font-weight: 700; color: white; padding-top: 20px; }
+    .top-bar { display: flex; justify-content: flex-end; padding: 20px; position: absolute; top: 0; right: 0; left: 0; }
+    .settings-btn { width: 32px; height: 32px; cursor: pointer; }
+    .game-scroll { position: absolute; top: 55%; left: 0; right: 0; transform: translateY(-50%); display: flex; overflow-x: auto; gap: 24px; padding: 0 20px; }
+    .game-btn { flex: 0 0 auto; width: 180px; height: 120px; border-radius: 12px; border: none; cursor: pointer; background: #222; color: white; font-size: 18px; font-weight: 600; display: flex; justify-content: center; align-items: center; text-decoration: none; }
+    .highlow { background: #36d1dc; }
+    .ranking { background: #f6d365; }
+    .chat { background: #a1c4fd; }
+    .revive { background: #96e6a1; }
+    .transfer { background: #8e44ad; }
+    .popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; }
+    .popup-content { background: #111; padding: 20px; border-radius: 12px; width: 260px; text-align: center; color: white; position: relative; }
+    .close-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; color: white; font-size: 22px; cursor: pointer; }
+    .menu-btn { display: block; background: #444; padding: 10px; margin: 10px 0; border-radius: 8px; text-decoration: none; color: white; }
+    .logout { background: #b00000; }
+    .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="title-bar">機能一覧</div>
+
+<div class="top-bar">
+    <img src="{{ url_for('static', filename='settei.webp') }}" class="settings-btn" id="settings-btn" alt="設定">
+</div>
+
+<div class="game-scroll">
+    <a href="/highlow" class="game-btn highlow">ハイロー</a>
+    <a href="/ranking" class="game-btn ranking">ランキング</a>
+    <a href="https://chat.onl.jp/?ZV5qqFKWMj" class="game-btn chat" target="_blank">チャット</a>
+    <a href="/transfer" class="game-btn transfer">コイン譲渡</a>
+    {% if current_user.coins == 0 %}
+    <a href="/revive_game" class="game-btn revive">復活ゲー</a>
+    {% endif %}
+</div>
+
+<div id="settings-popup" class="popup hidden">
+    <div class="popup-content">
+        <button class="close-btn">&times;</button>
+        <h2>メニュー</h2>
+        <a href="/" class="menu-btn">変換ツールへ</a>
+        <a href="/logout" class="menu-btn logout">ログアウト</a>
+    </div>
+</div>
+
+<script>
+document.getElementById("settings-btn").onclick = () => {
+    document.getElementById("settings-popup").classList.remove("hidden");
+};
+document.querySelector(".close-btn").onclick = () => {
+    document.getElementById("settings-popup").classList.add("hidden");
+};
+</script>
+
+</body>
+</html>
