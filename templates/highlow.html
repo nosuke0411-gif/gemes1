@@ -13,7 +13,6 @@
         --felt-green: #0d4d28;
         --felt-dark: #041f0e;
         --wood-dark: #1d0a04;
-        --wood-light: #3d1709;
         --card-width: 140px;
         --card-height: 200px;
     }
@@ -32,16 +31,15 @@
     }
 
     html, body {
-        width: 100%;
-        height: 100%;
+        width: 100vw;
+        height: 100vh;
         height: 100dvh;
         margin: 0;
         padding: 0;
         overflow: hidden;
         font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
         background: #05070a;
-        background-image: 
-            radial-gradient(circle at 50% 20%, #1a2638 0%, #05070a 80%);
+        background-image: radial-gradient(circle at 50% 20%, #1a2638 0%, #05070a 80%);
         color: #ffffff;
     }
 
@@ -67,7 +65,7 @@
         position: relative;
     }
 
-    /* TOP BAR - 横長スリムデザイン */
+    /* TOP BAR */
     .top-bar {
         display: flex;
         justify-content: space-between;
@@ -131,7 +129,7 @@
         color: #ffd700;
     }
 
-    /* MAIN CONTENT AREA - 左右分割横広レイアウト */
+    /* MAIN CONTENT AREA */
     .main-layout {
         display: flex;
         flex: 1;
@@ -140,7 +138,7 @@
         align-items: stretch;
     }
 
-    /* 左側: CASINO TABLE BOARD */
+    /* LEFT: CASINO TABLE BOARD */
     .table-board {
         position: relative;
         flex: 1.8;
@@ -171,8 +169,7 @@
 
     .table-logo {
         position: absolute;
-        top: 50%;
-        left: 50%;
+        top: 50%; left: 50%;
         transform: translate(-50%, -50%);
         font-family: 'Cinzel', serif;
         font-size: 32px;
@@ -213,7 +210,7 @@
         border: 1px solid rgba(212, 175, 55, 0.3);
     }
 
-    /* 3D LUXURY REALISTIC CARDS */
+    /* 3D CARDS */
     .card-container {
         width: var(--card-width);
         height: var(--card-height);
@@ -255,6 +252,7 @@
         padding: 8px 10px;
         color: #111;
         box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        transform: rotateY(180deg);
     }
 
     .card-front.red { color: #d62828; }
@@ -274,21 +272,25 @@
     .corner-val { font-size: 18px; font-family: 'Montserrat', sans-serif; font-weight: 900; }
     .corner-suit { font-size: 15px; margin-top: 1px; }
 
+    /* 中央は数字を表示 */
     .card-center {
         position: absolute;
         top: 50%; left: 50%;
         transform: translate(-50%, -50%);
-        font-size: 52px;
+        font-size: 64px;
+        font-weight: 900;
+        font-family: 'Cinzel', 'Montserrat', serif;
         display: flex;
         align-items: center;
         justify-content: center;
+        line-height: 1;
+        letter-spacing: -2px;
     }
 
     .card-back {
         background: #800a28;
         background-image: radial-gradient(circle at 50% 50%, #a81339 0%, #4a0014 100%);
         border: 3px solid #ffffff;
-        transform: rotateY(180deg);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -323,7 +325,7 @@
     .card-container.win .card-inner { box-shadow: 0 0 25px #2ecc71, 0 0 10px #2ecc71; }
     .card-container.lose .card-inner { box-shadow: 0 0 25px #e74c3c, 0 0 10px #e74c3c; }
 
-    /* MULTIPLIER BADGE & RESULT BANNER */
+    /* MULTIPLIER & RESULT */
     .multiplier-badge {
         background: rgba(10, 10, 12, 0.85);
         border: 1px solid var(--gold-primary);
@@ -362,7 +364,7 @@
         backdrop-filter: blur(4px);
     }
 
-    /* 右側: CONTROLS PANEL */
+    /* RIGHT: CONTROLS PANEL */
     .controls-panel {
         flex: 1;
         background: linear-gradient(180deg, rgba(20, 15, 12, 0.95) 0%, rgba(8, 5, 3, 0.98) 100%);
@@ -417,7 +419,7 @@
         color: #fff;
         cursor: pointer;
         box-shadow: 0 5px 10px rgba(0,0,0,0.6);
-        transition: transform 0.1s ease, box-shadow 0.1s ease;
+        transition: transform 0.1s ease;
     }
 
     .chip:hover { transform: translateY(-2px) scale(1.05); }
@@ -514,7 +516,6 @@
 
     .btn-sub:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
 
-    /* CANVAS FOR SPARKLING PARTICLES */
     #fx-canvas {
         position: fixed;
         top: 0; left: 0;
@@ -541,39 +542,39 @@
             </div>
             <div class="stat-badge">
                 <span class="stat-label">CHIPS:</span>
-                <span class="stat-value" id="coin-display">1,000</span>
+                <span class="stat-value" id="coin-display">{{ coins }}</span>
             </div>
         </div>
     </div>
 
-    <!-- MAIN LAYOUT (LEFT: TABLE, RIGHT: CONTROLS) -->
+    <!-- MAIN LAYOUT -->
     <div class="main-layout">
-        <!-- LEFT: CASINO TABLE -->
+        <!-- LEFT: CASINO TABLE BOARD -->
         <div class="table-board">
             <div class="table-logo">ROYAL HIGH & LOW</div>
 
             <!-- MULTIPLIER BADGE -->
             <div class="multiplier-badge">
                 <span>CURRENT MULTIPLIER:</span>
-                <span class="multiplier-val" id="mult-display">x1.95</span>
+                <span class="multiplier-val" id="mult-display">x1.00</span>
             </div>
 
             <!-- CARDS ARENA -->
             <div class="arena">
-                <!-- CURRENT BASE CARD -->
+                <!-- BASE CARD SLOT -->
                 <div class="card-slot">
                     <div class="slot-label">BASE CARD</div>
                     <div class="card-container flipped" id="card-base-container">
                         <div class="card-inner">
-                            <div class="card-front red" id="card-base-front">
+                            <div class="card-front" id="card-base-front">
                                 <div class="card-corner top-left">
-                                    <span class="corner-val" id="base-val-tl">7</span>
-                                    <span class="corner-suit" id="base-suit-tl">♥</span>
+                                    <span class="corner-val" id="base-val-tl">?</span>
+                                    <span class="corner-suit" id="base-suit-tl">♠</span>
                                 </div>
-                                <div class="card-center" id="base-suit-center">♥</div>
+                                <div class="card-center" id="base-val-center">?</div>
                                 <div class="card-corner bottom-right">
-                                    <span class="corner-val" id="base-val-br">7</span>
-                                    <span class="corner-suit" id="base-suit-br">♥</span>
+                                    <span class="corner-val" id="base-val-br">?</span>
+                                    <span class="corner-suit" id="base-suit-br">♠</span>
                                 </div>
                             </div>
                             <div class="card-back">
@@ -585,17 +586,17 @@
                     </div>
                 </div>
 
-                <!-- NEXT CARD -->
+                <!-- NEXT CARD SLOT -->
                 <div class="card-slot">
                     <div class="slot-label">NEXT CARD</div>
                     <div class="card-container" id="card-next-container">
                         <div class="card-inner">
-                            <div class="card-front black" id="card-next-front">
+                            <div class="card-front" id="card-next-front">
                                 <div class="card-corner top-left">
                                     <span class="corner-val" id="next-val-tl">?</span>
                                     <span class="corner-suit" id="next-suit-tl">♠</span>
                                 </div>
-                                <div class="card-center" id="next-suit-center">♠</div>
+                                <div class="card-center" id="next-val-center">?</div>
                                 <div class="card-corner bottom-right">
                                     <span class="corner-val" id="next-val-br">?</span>
                                     <span class="corner-suit" id="next-suit-br">♠</span>
@@ -613,7 +614,7 @@
 
             <!-- RESULT BANNER -->
             <div class="result-banner" id="result-message">
-                ベット額を選択して「START GAME」を押してください
+                ベット額を設定して「GAME START」を押してください
             </div>
         </div>
 
@@ -623,7 +624,7 @@
 
             <!-- CHIP SELECTOR -->
             <div>
-                <div class="chip-selector-label">SELECT CHIP TO ADD</div>
+                <div class="chip-selector-label">ADD CHIPS</div>
                 <div class="chip-selector" id="chip-area">
                     <div class="chip chip-1" onclick="addBet(1)">$1</div>
                     <div class="chip chip-5" onclick="addBet(5)">$5</div>
@@ -635,7 +636,7 @@
 
             <!-- BET INPUT -->
             <div class="bet-input-container">
-                <span style="color:#aaa; font-weight:800; font-size:12px;">BET AMOUNT:</span>
+                <span style="color:#aaa; font-weight:800; font-size:12px;">BET:</span>
                 <input type="number" id="bet-amount" value="10" min="1">
                 <button class="btn-sub" onclick="clearBet()">CLEAR</button>
             </div>
@@ -643,7 +644,7 @@
             <!-- ACTION BUTTONS -->
             <div id="action-controls" style="display: flex; flex-direction: column; gap: 8px;">
                 <button class="btn btn-gold" id="start-btn" onclick="handleStartGame()">
-                    ✨ START GAME
+                    ✨ GAME START
                 </button>
 
                 <div class="btn-group" id="choice-btns" style="display: none;">
@@ -658,71 +659,52 @@
                 <button class="btn btn-cashout" id="cashout-btn" style="display: none;" onclick="handleCashout()">
                     💰 CASH OUT (<span id="win-amount">$0</span>)
                 </button>
+
+                <button class="btn btn-gold" id="retry-btn" style="display: none;" onclick="resetToBetMode()">
+                    ✨ もう一度遊ぶ
+                </button>
             </div>
 
-            <button class="btn-sub" onclick="history.back()">◀ ゲーム一覧へ戻る</button>
+            <button class="btn-sub" onclick="location.href='/games'">◀ ゲーム一覧へ戻る</button>
         </div>
     </div>
 </div>
 
 <script>
 /**
- * GAME STATE MANAGEMENT (NO AUDIO)
+ * HIGH & LOW FRONTEND ENGINE
  */
-const SUITS = [
-    { symbol: '♠', name: 'spades', color: 'black' },
-    { symbol: '♥', name: 'hearts', color: 'red' },
-    { symbol: '♦', name: 'diamonds', color: 'red' },
-    { symbol: '♣', name: 'clubs', color: 'black' }
-];
-
-const VAL_MAP = {
-    1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 
-    8: '8', 9: '9', 10: '10', 11: 'J', 12: 'Q', 13: 'K'
-};
-
 let gameState = {
-    coins: 1000,
+    coins: parseInt("{{ coins }}") || 1000,
     currentBet: 10,
-    baseCard: { value: 7, suit: SUITS[1] },
+    baseCard: null,
     nextCard: null,
     streak: 0,
-    multiplier: 1.95,
+    multiplier: 1.0,
     isPlaying: false
 };
 
-// INITIALIZE INTERFACE
 window.onload = function() {
     initFxCanvas();
-    try {
-        const serverCoins = parseInt("{{ coins }}");
-        if (!isNaN(serverCoins)) gameState.coins = serverCoins;
-        
-        const serverVal = parseInt("{{ value }}");
-        if (!isNaN(serverVal)) gameState.baseCard.value = serverVal;
-    } catch(e) {}
-
-    updateCardUI('base', gameState.baseCard.value, gameState.baseCard.suit);
     updateCoinsUI();
 };
 
 function updateCoinsUI() {
     document.getElementById('coin-display').textContent = gameState.coins.toLocaleString();
     document.getElementById('streak-display').textContent = gameState.streak;
+    document.getElementById('mult-display').textContent = `x${gameState.multiplier.toFixed(2)}`;
 }
 
-function updateCardUI(target, val, suitObj) {
-    const displayVal = VAL_MAP[val] || val;
-    const isRed = suitObj.color === 'red';
-    
+function updateCardUI(target, cardData) {
+    if (!cardData) return;
     const frontEl = document.getElementById(`card-${target}-front`);
-    frontEl.className = `card-front ${isRed ? 'red' : 'black'}`;
+    frontEl.className = `card-front ${cardData.color === 'red' ? 'red' : 'black'}`;
     
-    document.getElementById(`${target}-val-tl`).textContent = displayVal;
-    document.getElementById(`${target}-suit-tl`).textContent = suitObj.symbol;
-    document.getElementById(`${target}-suit-center`).textContent = suitObj.symbol;
-    document.getElementById(`${target}-val-br`).textContent = displayVal;
-    document.getElementById(`${target}-suit-br`).textContent = suitObj.symbol;
+    document.getElementById(`${target}-val-tl`).textContent = cardData.val_str;
+    document.getElementById(`${target}-suit-tl`).textContent = cardData.symbol;
+    document.getElementById(`${target}-val-center`).textContent = cardData.val_str;
+    document.getElementById(`${target}-val-br`).textContent = cardData.val_str;
+    document.getElementById(`${target}-suit-br`).textContent = cardData.symbol;
 }
 
 function addBet(amount) {
@@ -737,9 +719,7 @@ function clearBet() {
     document.getElementById('bet-amount').value = 0;
 }
 
-/**
- * STREAMING_CHUNK:Handling game start and fallback logic...
- */
+// 1. GAME START
 async function handleStartGame() {
     const betInput = parseInt(document.getElementById('bet-amount').value);
     if (!betInput || betInput <= 0 || betInput > gameState.coins) {
@@ -747,150 +727,160 @@ async function handleStartGame() {
         return;
     }
 
-    gameState.currentBet = betInput;
-    gameState.coins -= betInput;
-    gameState.streak = 0;
-    gameState.isPlaying = true;
-    updateCoinsUI();
-
-    // Reset slots
-    document.getElementById('card-next-container').classList.remove('flipped', 'win', 'lose');
-    document.getElementById('card-base-container').classList.remove('win', 'lose');
-    
     try {
         const response = await fetch("/highlow_start", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ 
-                current_value: gameState.baseCard.value, 
-                current_suit: gameState.baseCard.suit.name, 
-                bet: gameState.currentBet 
-            })
+            body: JSON.stringify({ bet: betInput })
         });
-        if (response.ok) {
-            const data = await response.json();
-            if(data.html) {
-                document.body.innerHTML = data.html;
-                return;
-            }
+        const data = await response.json();
+
+        if (!data.success) {
+            setMessage(data.msg);
+            return;
         }
-    } catch(e) {}
 
-    // Standalone fallback
-    gameState.baseCard = getRandomCard();
-    updateCardUI('base', gameState.baseCard.value, gameState.baseCard.suit);
-    document.getElementById('card-base-container').classList.add('flipped');
+        gameState.coins = data.coins;
+        gameState.currentBet = data.bet;
+        gameState.streak = 0;
+        gameState.multiplier = 1.0;
+        gameState.baseCard = data.base_card;
+        gameState.isPlaying = true;
 
-    // Toggle Controls
-    document.getElementById('start-btn').style.display = 'none';
-    document.getElementById('chip-area').style.pointerEvents = 'none';
-    document.getElementById('bet-amount').disabled = true;
-    document.getElementById('choice-btns').style.display = 'flex';
-    document.getElementById('cashout-btn').style.display = 'block';
-    
-    updateCashoutBtn();
-    setMessage("「HIGH」か「LOW」かを選択してください");
+        // UI Reset
+        updateCoinsUI();
+        updateCardUI('base', gameState.baseCard);
+        
+        document.getElementById('card-base-container').classList.add('flipped');
+        document.getElementById('card-next-container').classList.remove('flipped', 'win', 'lose');
+        
+        // Control Mode Toggle
+        document.getElementById('start-btn').style.display = 'none';
+        document.getElementById('retry-btn').style.display = 'none';
+        document.getElementById('chip-area').style.pointerEvents = 'none';
+        document.getElementById('bet-amount').disabled = true;
+        document.getElementById('choice-btns').style.display = 'flex';
+        document.getElementById('cashout-btn').style.display = 'none';
+
+        setMessage(data.msg);
+
+    } catch(e) {
+        console.error(e);
+        setMessage("通信エラーが発生しました");
+    }
 }
 
-/**
- * STREAMING_CHUNK:Handling round choices and win evaluation...
- */
+// 2. HIGH / LOW CHOICE PLAY
 async function handlePlay(choice) {
     if (!gameState.isPlaying) return;
-
-    gameState.nextCard = getRandomCard();
-    updateCardUI('next', gameState.nextCard.value, gameState.nextCard.suit);
-    const nextContainer = document.getElementById('card-next-container');
-    nextContainer.classList.add('flipped');
-
-    const isWin = (choice === 'HIGH' && gameState.nextCard.value >= gameState.baseCard.value) ||
-                  (choice === 'LOW' && gameState.nextCard.value <= gameState.baseCard.value);
 
     try {
         const response = await fetch("/highlow_play2", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ choice })
+            body: JSON.stringify({ choice: choice })
         });
-        if (response.ok) {
-            const data = await response.json();
-            if (data.html) {
-                document.body.innerHTML = data.html;
-                return;
-            }
-        }
-    } catch(e) {}
+        const data = await response.json();
 
-    setTimeout(() => {
-        if (isWin) {
-            spawnParticles();
-            gameState.streak++;
-            nextContainer.classList.add('win');
-            
-            const currentWin = Math.floor(gameState.currentBet * Math.pow(1.95, gameState.streak));
-            setMessage(`🎉 WIN! ${gameState.streak}連勝中! (獲得権: $${currentWin})`);
-            
-            setTimeout(() => {
-                gameState.baseCard = gameState.nextCard;
-                updateCardUI('base', gameState.baseCard.value, gameState.baseCard.suit);
-                nextContainer.classList.remove('flipped', 'win');
-                updateCashoutBtn();
+        if (!data.success) {
+            setMessage(data.msg);
+            return;
+        }
+
+        gameState.nextCard = data.next_card;
+        updateCardUI('next', gameState.nextCard);
+
+        const nextContainer = document.getElementById('card-next-container');
+        nextContainer.classList.add('flipped');
+
+        setTimeout(() => {
+            if (data.result === 'win') {
+                spawnParticles();
+                nextContainer.classList.add('win');
+                gameState.streak = data.streak;
+                gameState.multiplier = data.multiplier;
                 updateCoinsUI();
-            }, 1000);
 
-        } else {
-            nextContainer.classList.add('lose');
-            setMessage(`💥 LOSE... 残念！カードは [ ${VAL_MAP[gameState.nextCard.value]} ] でした`);
-            endGame(false);
-        }
-    }, 500);
+                document.getElementById('cashout-btn').style.display = 'block';
+                document.getElementById('win-amount').textContent = `$${data.est_payout.toLocaleString()}`;
+
+                // Win Case: Base card updates to next card seamlessly
+                setTimeout(() => {
+                    gameState.baseCard = gameState.nextCard;
+                    updateCardUI('base', gameState.baseCard);
+                    nextContainer.classList.remove('flipped', 'win');
+                }, 1200);
+
+            } else if (data.result === 'draw') {
+                gameState.baseCard = gameState.nextCard;
+                updateCardUI('base', gameState.baseCard);
+                setTimeout(() => {
+                    nextContainer.classList.remove('flipped');
+                }, 1000);
+
+            } else { // Lose
+                nextContainer.classList.add('lose');
+                gameState.isPlaying = false;
+                
+                document.getElementById('choice-btns').style.display = 'none';
+                document.getElementById('cashout-btn').style.display = 'none';
+                document.getElementById('retry-btn').style.display = 'block';
+            }
+
+            setMessage(data.msg);
+        }, 500);
+
+    } catch(e) {
+        console.error(e);
+        setMessage("通信エラーが発生しました");
+    }
 }
 
-function handleCashout() {
-    if (!gameState.isPlaying || gameState.streak === 0) return;
+// 3. CASH OUT
+async function handleCashout() {
+    if (!gameState.isPlaying) return;
 
-    const winAmount = Math.floor(gameState.currentBet * Math.pow(1.95, gameState.streak));
-    gameState.coins += winAmount;
-    spawnParticles();
-    
     try {
-        fetch('/highlow_cashout').then(res => {
-            if (res.redirected) window.location.href = res.url;
-        });
-    } catch(e) {}
+        const response = await fetch("/highlow_cashout", { method: "POST" });
+        const data = await response.json();
 
-    setMessage(`💰 CASH OUT! $${winAmount} を獲得しました！`);
-    updateCoinsUI();
-    endGame(true);
+        if (data.success) {
+            spawnParticles();
+            gameState.coins = data.coins;
+            gameState.isPlaying = false;
+            updateCoinsUI();
+
+            setMessage(data.msg);
+            
+            document.getElementById('choice-btns').style.display = 'none';
+            document.getElementById('cashout-btn').style.display = 'none';
+            document.getElementById('retry-btn').style.display = 'block';
+        }
+    } catch(e) {
+        console.error(e);
+    }
 }
 
-function endGame(isWin) {
-    gameState.isPlaying = false;
+function resetToBetMode() {
     document.getElementById('start-btn').style.display = 'block';
+    document.getElementById('retry-btn').style.display = 'none';
     document.getElementById('chip-area').style.pointerEvents = 'auto';
     document.getElementById('bet-amount').disabled = false;
-    document.getElementById('choice-btns').style.display = 'none';
-    document.getElementById('cashout-btn').style.display = 'none';
-}
+    document.getElementById('card-next-container').classList.remove('flipped', 'win', 'lose');
+    document.getElementById('card-base-container').classList.remove('win', 'lose');
+    
+    gameState.streak = 0;
+    gameState.multiplier = 1.0;
+    updateCoinsUI();
 
-function updateCashoutBtn() {
-    const winAmount = Math.floor(gameState.currentBet * Math.pow(1.95, gameState.streak || 1));
-    document.getElementById('win-amount').textContent = `$${winAmount}`;
+    setMessage("ベット額を設定して「GAME START」を押してください");
 }
 
 function setMessage(msg) {
     document.getElementById('result-message').textContent = msg;
 }
 
-function getRandomCard() {
-    const suit = SUITS[Math.floor(Math.random() * SUITS.length)];
-    const value = Math.floor(Math.random() * 13) + 1;
-    return { suit, value };
-}
-
-/**
- * STREAMING_CHUNK:Rendering visual gold particle effects...
- */
+/* PARTICLES FX Engine */
 let canvas, ctx, particles = [];
 
 function initFxCanvas() {
@@ -907,14 +897,14 @@ function resizeCanvas() {
 }
 
 function spawnParticles() {
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 60; i++) {
         particles.push({
-            x: canvas.width * 0.4,
-            y: canvas.height * 0.5,
-            vx: (Math.random() - 0.5) * 14,
-            vy: (Math.random() - 0.7) * 14,
+            x: canvas.width * 0.45,
+            y: canvas.height * 0.4,
+            vx: (Math.random() - 0.5) * 16,
+            vy: (Math.random() - 0.7) * 16,
             size: Math.random() * 6 + 3,
-            color: `hsl(${Math.random() * 20 + 40}, 100%, ${Math.random() * 30 + 50}%)`,
+            color: `hsl(${Math.random() * 30 + 40}, 100%, ${Math.random() * 30 + 50}%)`,
             alpha: 1,
             decay: Math.random() * 0.02 + 0.015
         });
@@ -927,7 +917,7 @@ function renderParticles() {
         const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.3;
+        p.vy += 0.35;
         p.alpha -= p.decay;
 
         if (p.alpha <= 0) {
