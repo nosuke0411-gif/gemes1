@@ -476,6 +476,13 @@
         box-shadow: 0 5px 15px rgba(0,0,0,0.5);
     }
 
+    .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        filter: grayscale(80%);
+        transform: none !important;
+    }
+
     .btn:active:not(:disabled) { transform: translateY(2px); }
 
     .btn-gold {
@@ -648,10 +655,10 @@
                 </button>
 
                 <div class="btn-group" id="choice-btns" style="display: none;">
-                    <button class="btn btn-high" onclick="handlePlay('HIGH')">
+                    <button class="btn btn-high" id="btn-high" onclick="handlePlay('HIGH')">
                         ▲ HIGH
                     </button>
-                    <button class="btn btn-low" onclick="handlePlay('LOW')">
+                    <button class="btn btn-low" id="btn-low" onclick="handlePlay('LOW')">
                         ▼ LOW
                     </button>
                 </div>
@@ -681,13 +688,22 @@ let gameState = {
     nextCard: null,
     streak: 0,
     multiplier: 1.0,
-    isPlaying: false
+    isPlaying: false,
+    isProcessing: false // 連打防止ロックフラグ
 };
 
 window.onload = function() {
     initFxCanvas();
     updateCoinsUI();
 };
+
+function setButtonsLock(locked) {
+    gameState.isProcessing = locked;
+    document.getElementById('btn-high').disabled = locked;
+    document.getElementById('btn-low').disabled = locked;
+    const cashoutBtn = document.getElementById('cashout-btn');
+    if (cashoutBtn) cashoutBtn.disabled = locked;
+}
 
 function updateCoinsUI() {
     document.getElementById('coin-display').textContent = gameState.coins.toLocaleString();
@@ -708,24 +724,29 @@ function updateCardUI(target, cardData) {
 }
 
 function addBet(amount) {
-    if (gameState.isPlaying) return;
+    if (gameState.isPlaying || gameState.isProcessing) return;
     const input = document.getElementById('bet-amount');
     let current = parseInt(input.value) || 0;
     input.value = Math.min(gameState.coins, current + amount);
 }
 
 function clearBet() {
-    if (gameState.isPlaying) return;
+    if (gameState.isPlaying || gameState.isProcessing) return;
     document.getElementById('bet-amount').value = 0;
 }
 
 // 1. GAME START
 async function handleStartGame() {
+    if (gameState.isProcessing) return;
+
     const betInput = parseInt(document.getElementById('bet-amount').value);
     if (!betInput || betInput <= 0 || betInput > gameState.coins) {
         setMessage("正しいベット額を入力してください");
         return;
     }
+
+    gameState.isProcessing = true;
+    document.getElementById('start-btn').disabled = true;
 
     try {
         const response = await fetch("/highlow_start", {
@@ -737,6 +758,8 @@ async function handleStartGame() {
 
         if (!data.success) {
             setMessage(data.msg);
+            gameState.isProcessing = false;
+            document.getElementById('start-btn').disabled = false;
             return;
         }
 
@@ -767,12 +790,18 @@ async function handleStartGame() {
     } catch(e) {
         console.error(e);
         setMessage("通信エラーが発生しました");
+    } finally {
+        setButtonsLock(false);
+        document.getElementById('start-btn').disabled = false;
     }
 }
 
 // 2. HIGH / LOW CHOICE PLAY
 async function handlePlay(choice) {
-    if (!gameState.isPlaying) return;
+    if (!gameState.isPlaying || gameState.isProcessing) return;
+
+    // ★ 連打防止のためボタン即時ロック
+    setButtonsLock(true);
 
     try {
         const response = await fetch("/highlow_play2", {
@@ -784,6 +813,7 @@ async function handlePlay(choice) {
 
         if (!data.success) {
             setMessage(data.msg);
+            setButtonsLock(false);
             return;
         }
 
@@ -793,6 +823,7 @@ async function handlePlay(choice) {
         const nextContainer = document.getElementById('card-next-container');
         nextContainer.classList.add('flipped');
 
+        // カードめくりアニメーション完了待ち（0.5s後）
         setTimeout(() => {
             if (data.result === 'win') {
                 spawnParticles();
@@ -804,11 +835,14 @@ async function handlePlay(choice) {
                 document.getElementById('cashout-btn').style.display = 'block';
                 document.getElementById('win-amount').textContent = `$${data.est_payout.toLocaleString()}`;
 
-                // Win Case: Base card updates to next card seamlessly
+                // Win Case: 次のカードをベースカードとして引き継ぎ（1.2s後）
                 setTimeout(() => {
                     gameState.baseCard = gameState.nextCard;
                     updateCardUI('base', gameState.baseCard);
                     nextContainer.classList.remove('flipped', 'win');
+                    
+                    // アニメーション完了後にロック解除
+                    setButtonsLock(false);
                 }, 1200);
 
             } else if (data.result === 'draw') {
@@ -816,6 +850,7 @@ async function handlePlay(choice) {
                 updateCardUI('base', gameState.baseCard);
                 setTimeout(() => {
                     nextContainer.classList.remove('flipped');
+                    setButtonsLock(false);
                 }, 1000);
 
             } else { // Lose
@@ -825,6 +860,9 @@ async function handlePlay(choice) {
                 document.getElementById('choice-btns').style.display = 'none';
                 document.getElementById('cashout-btn').style.display = 'none';
                 document.getElementById('retry-btn').style.display = 'block';
+
+                // 敗北時も処理完了でロック解除
+                gameState.isProcessing = false;
             }
 
             setMessage(data.msg);
@@ -833,12 +871,15 @@ async function handlePlay(choice) {
     } catch(e) {
         console.error(e);
         setMessage("通信エラーが発生しました");
+        setButtonsLock(false);
     }
 }
 
 // 3. CASH OUT
 async function handleCashout() {
-    if (!gameState.isPlaying) return;
+    if (!gameState.isPlaying || gameState.isProcessing) return;
+
+    setButtonsLock(true);
 
     try {
         const response = await fetch("/highlow_cashout", { method: "POST" });
@@ -858,6 +899,8 @@ async function handleCashout() {
         }
     } catch(e) {
         console.error(e);
+    } finally {
+        gameState.isProcessing = false;
     }
 }
 
@@ -871,6 +914,7 @@ function resetToBetMode() {
     
     gameState.streak = 0;
     gameState.multiplier = 1.0;
+    gameState.isProcessing = false;
     updateCoinsUI();
 
     setMessage("ベット額を設定して「GAME START」を押してください");
