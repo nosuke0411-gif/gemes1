@@ -2,34 +2,218 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Ranking</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>総資産ランキング</title>
+<!-- Google Fonts & Font Awesome for rich typography and icons -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+
 <style>
-    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
-    body { font-family: sans-serif; background-image: url('{{ url_for('static', filename='haikei_2.webp') }}'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed; color: white; text-align: center; }
-    .container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -55%); background: rgba(0,0,0,0.55); padding: 20px; border-radius: 12px; width: 90%; max-width: 450px; height: 60vh; overflow-y: auto; }
-    .rank-item { background: rgba(255,255,255,0.1); padding: 10px; margin: 6px 0; border-radius: 8px; font-size: 18px; }
-    .back-btn { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: #444; padding: 12px 20px; border-radius: 8px; text-decoration: none; color: white; font-size: 18px; }
+    /* Custom Styling for Luxury Aesthetics */
+    body {
+        font-family: 'Noto Sans JP', sans-serif;
+        background-image: radial-gradient(circle at center, rgba(15, 23, 42, 0.75), rgba(3, 7, 18, 0.95)), url("{{ url_for('static', filename='haikei_2.webp') }}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }
+
+    .cinzel {
+        font-family: 'Cinzel', serif;
+    }
+
+    /* Glassmorphism Container */
+    .glass-card {
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 215, 0, 0.2);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(255, 215, 0, 0.05);
+    }
+
+    /* Custom Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(212, 175, 55, 0.4);
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(212, 175, 55, 0.8);
+    }
+
+    /* Top 3 Special Styles */
+    .rank-1 {
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.35) 0%, rgba(180, 130, 0, 0.2) 100%);
+        border: 1px solid rgba(255, 223, 0, 0.8);
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+    .rank-2 {
+        background: linear-gradient(135deg, rgba(226, 232, 240, 0.3) 0%, rgba(148, 163, 184, 0.15) 100%);
+        border: 1px solid rgba(226, 232, 240, 0.7);
+        box-shadow: 0 0 15px rgba(226, 232, 240, 0.2);
+    }
+    .rank-3 {
+        background: linear-gradient(135deg, rgba(217, 119, 6, 0.3) 0%, rgba(120, 53, 15, 0.15) 100%);
+        border: 1px solid rgba(245, 158, 11, 0.7);
+        box-shadow: 0 0 15px rgba(217, 119, 6, 0.2);
+    }
+
+    /* Gold Text Glow */
+    .gold-glow {
+        text-shadow: 0 0 12px rgba(255, 215, 0, 0.6), 0 0 2px rgba(255, 255, 255, 0.8);
+    }
+
+    /* Shimmer Effect for Gold Title */
+    @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+    .shimmer-text {
+        background: linear-gradient(90deg, #ffe066 0%, #ffffff 50%, #ffe066 100%);
+        background-size: 200% auto;
+        color: transparent;
+        -webkit-background-clip: text;
+        animation: shimmer 4s linear infinite;
+    }
 </style>
 </head>
-<body>
+<body class="h-screen w-screen overflow-hidden text-white flex flex-col items-center justify-center p-4">
 
-<div class="container">
-    <h2>総資産ランキング</h2>
+<div class="relative w-full max-w-xl h-[85vh] flex flex-col items-center">
 
-    {% for u in top10 %}
-        <div class="rank-item">
-            {{ loop.index }} 位：{{ u.username }}（{{ u.coins }} コイン）
+    <!-- Header Title Component -->
+    <div class="text-center mb-4 z-10">
+        <div class="inline-flex items-center space-x-2 mb-1">
+            <i class="fa-solid fa-trophy text-amber-400 text-2xl md:text-3xl animate-bounce"></i>
+            <h1 class="text-2xl md:text-4xl font-black tracking-wider shimmer-text uppercase">
+                Leaderboard
+            </h1>
+            <i class="fa-solid fa-trophy text-amber-400 text-2xl md:text-3xl animate-bounce"></i>
         </div>
-    {% endfor %}
-
-    <hr style="margin: 20px 0; opacity: 0.4;">
-
-    <div class="rank-item">
-        あなたの順位：{{ my_rank }} 位（{{ current_user.coins }} コイン）
+        <p class="text-xs md:text-sm text-amber-200/70 tracking-widest uppercase cinzel font-semibold">
+            — 総資産ランキング —
+        </p>
     </div>
-</div>
 
-<a href="/games" class="back-btn">ゲーム一覧に戻る</a>
+    <!-- Main Glassboard Container -->
+    <div class="glass-card w-full flex-1 rounded-2xl p-4 md:p-6 flex flex-col overflow-hidden relative border border-amber-500/30">
+        
+        <!-- Header Column Labels -->
+        <div class="flex items-center justify-between px-4 py-2 mb-2 text-xs font-bold text-amber-300/60 uppercase tracking-wider border-b border-white/10">
+            <span class="w-12 text-center">順位</span>
+            <span class="flex-1 pl-4 text-left">プレイヤー</span>
+            <span class="text-right">所持コイン</span>
+        </div>
+
+        <!-- Ranking List Items (Scrollable) -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1">
+            {% for u in top10 %}
+            {% set index = loop.index %}
+            <div class="group relative flex items-center justify-between p-3 rounded-xl transition-all duration-300 transform hover:-translate-y-0.5
+                {% if index == 1 %} rank-1
+                {% elif index == 2 %} rank-2
+                {% elif index == 3 %} rank-3
+                {% else %} background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); hover:background: rgba(255, 255, 255, 0.08);
+                {% endif %}">
+                
+                <!-- Rank Icon / Number -->
+                <div class="w-12 flex items-center justify-center font-extrabold text-lg md:text-xl">
+                    {% if index == 1 %}
+                        <div class="relative flex items-center justify-center">
+                            <i class="fa-solid fa-crown text-amber-300 text-2xl drop-shadow-md"></i>
+                        </div>
+                    {% elif index == 2 %}
+                        <div class="w-7 h-7 rounded-full bg-slate-300/30 text-slate-100 flex items-center justify-center text-sm font-bold border border-slate-300">
+                            2
+                        </div>
+                    {% elif index == 3 %}
+                        <div class="w-7 h-7 rounded-full bg-amber-700/40 text-amber-300 flex items-center justify-center text-sm font-bold border border-amber-600">
+                            3
+                        </div>
+                    {% else %}
+                        <span class="text-gray-400 font-semibold">{{ index }}</span>
+                    {% endif %}
+                </div>
+
+                <!-- Username & Details -->
+                <div class="flex-1 pl-4 flex items-center space-x-3 overflow-hidden">
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-500/20 to-purple-500/20 border border-white/20 flex items-center justify-center flex-shrink-0 text-amber-200">
+                        <i class="fa-solid fa-user text-sm"></i>
+                    </div>
+                    <div class="truncate">
+                        <div class="font-bold text-sm md:text-base text-white truncate flex items-center space-x-1">
+                            <span>{{ u.username }}</span>
+                            {% if index == 1 %}
+                                <i class="fa-solid fa-sparkles text-amber-300 text-xs ml-1"></i>
+                            {% endif %}
+                        </div>
+                        <div class="text-[10px] text-gray-400">RANKED MEMBER</div>
+                    </div>
+                </div>
+
+                <!-- Coins Display -->
+                <div class="text-right flex-shrink-0 pl-2">
+                    <div class="flex items-center justify-end space-x-1.5">
+                        <i class="fa-solid fa-coins text-amber-400 text-sm md:text-base"></i>
+                        <span class="font-black text-amber-300 text-base md:text-lg tracking-tight font-mono">
+                            {{ "{:,}".format(u.coins) if u.coins is defined and u.coins is number else u.coins }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Divider -->
+        <div class="my-3 border-t border-amber-500/30"></div>
+
+        <!-- My Rank Highlight Card -->
+        <div class="bg-gradient-to-r from-amber-900/40 via-yellow-900/30 to-amber-900/40 border border-amber-500/50 rounded-xl p-3 flex items-center justify-between shadow-lg relative overflow-hidden">
+            <!-- Subtle Highlight Glow -->
+            <div class="absolute inset-0 bg-amber-400/5 pointer-events-none"></div>
+
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400/60 flex items-center justify-center text-amber-300 font-bold text-sm">
+                    YOU
+                </div>
+                <div>
+                    <div class="text-[10px] uppercase tracking-wider text-amber-300/80 font-bold">あなたの順位</div>
+                    <div class="text-base font-extrabold text-white flex items-center">
+                        <span class="text-amber-400 text-xl font-black mr-1">{{ my_rank }}</span> 位
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-right">
+                <div class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">現在の総資産</div>
+                <div class="flex items-center justify-end space-x-1 text-amber-300 font-extrabold text-lg font-mono">
+                    <i class="fa-solid fa-coins text-amber-400 text-sm"></i>
+                    <span>{{ "{:,}".format(current_user.coins) if current_user.coins is defined and current_user.coins is number else current_user.coins }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="mt-4 z-10 w-full flex justify-center">
+        <a href="/games" class="group relative inline-flex items-center justify-center px-6 py-3 overflow-hidden font-bold rounded-xl shadow-2xl transition duration-300 ease-out border border-amber-500/40 bg-slate-900/80 hover:bg-slate-800 text-white">
+            <span class="absolute inset-0 w-full h-full bg-gradient-to-br from-amber-500/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></span>
+            <i class="fa-solid fa-arrow-left mr-2 text-amber-400 group-hover:-translate-x-1 transition-transform"></i>
+            <span class="tracking-wider text-sm">ゲーム一覧に戻る</span>
+        </a>
+    </div>
+
+</div>
 
 </body>
 </html>
