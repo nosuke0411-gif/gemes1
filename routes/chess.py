@@ -119,6 +119,6 @@ def make_move():
     ROOMS[code]["fen"] = new_fen
     return jsonify({"success": True})
 
-@app.route('/api/health', methods=['GET'])
+@chess_bp.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "ok", "message": "Render Memory Chess Server is running"})
