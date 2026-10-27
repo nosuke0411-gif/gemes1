@@ -1,344 +1,984 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>チェス対戦ルーム - Chess Suite</title>
-    <!-- Tailwind CSS (CDN) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome (Icons) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
-            color: #f8fafc;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>High & Low - Grand VIP Casino Wide</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Montserrat:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --gold-primary: #d4af37;
+        --gold-light: #fff3a8;
+        --gold-dark: #aa7c11;
+        --felt-green: #0d4d28;
+        --felt-dark: #041f0e;
+        --wood-dark: #1d0a04;
+        --card-width: 140px;
+        --card-height: 200px;
+    }
+
+    @media (max-height: 750px) {
+        :root {
+            --card-width: 115px;
+            --card-height: 165px;
         }
-        /* チェスボードスタイル */
-        .board-grid {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            grid-template-rows: repeat(8, 1fr);
-            width: 100%;
-            max-width: 480px;
-            aspect-ratio: 1;
-            border: 4px solid #334155;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-        }
-        .square {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.25rem;
-            user-select: none;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-        .square.white {
-            background-color: #e2e8f0;
-            color: #1e293b;
-        }
-        .square.black {
-            background-color: #475569;
-            color: #f8fafc;
-        }
-        .square.selected {
-            background-color: #fbbf24 !important;
-        }
-        .square.highlight {
-            position: relative;
-        }
-        .square.highlight::after {
-            content: '';
-            width: 16px;
-            height: 16px;
-            background-color: rgba(34, 197, 94, 0.7);
-            border-radius: 50%;
-        }
-        /* 駒のスタイル拡張 */
-        .piece {
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
-            transition: transform 0.1s ease;
-        }
-        .piece:hover {
-            transform: scale(1.1);
-        }
-    </style>
+    }
+
+    * {
+        box-sizing: border-box;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    html, body {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #05070a;
+        background-image: radial-gradient(circle at 50% 20%, #1a2638 0%, #05070a 80%);
+        color: #ffffff;
+    }
+
+    .gold-text {
+        background: linear-gradient(135deg, #fff8cb 0%, #e6c865 35%, #b8860b 70%, #fff8cb 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 2px 12px rgba(212, 175, 55, 0.4);
+    }
+
+    /* 全画面横長コンテナ */
+    .app-container {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        max-width: 1500px;
+        margin: 0 auto;
+        padding: 12px 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 12px;
+        position: relative;
+    }
+
+    /* TOP BAR */
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(180deg, rgba(30, 18, 10, 0.95) 0%, rgba(12, 5, 2, 0.98) 100%);
+        padding: 8px 24px;
+        border-radius: 40px;
+        border: 1.5px solid var(--gold-primary);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.2);
+        flex-shrink: 0;
+    }
+
+    .brand-title {
+        font-family: 'Cinzel', serif;
+        font-size: 22px;
+        font-weight: 900;
+        letter-spacing: 2px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .vip-tag {
+        font-size: 10px;
+        background: linear-gradient(135deg, #d4af37, #aa7c11);
+        color: #000;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 900;
+        letter-spacing: 1px;
+    }
+
+    .top-stats {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .stat-badge {
+        display: flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.65);
+        padding: 6px 16px;
+        border-radius: 20px;
+        border: 1px solid rgba(212, 175, 55, 0.4);
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
+    }
+
+    .stat-label {
+        font-size: 11px;
+        color: #999;
+        margin-right: 8px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+        font-size: 18px;
+        font-weight: 800;
+        color: #ffd700;
+    }
+
+    /* MAIN CONTENT AREA */
+    .main-layout {
+        display: flex;
+        flex: 1;
+        gap: 16px;
+        min-height: 0;
+        align-items: stretch;
+    }
+
+    /* LEFT: CASINO TABLE BOARD */
+    .table-board {
+        position: relative;
+        flex: 1.8;
+        background: radial-gradient(ellipse at center, #115c2e 0%, #07381a 65%, #021a0a 100%);
+        border-radius: 60px;
+        padding: 16px;
+        border: 14px solid var(--wood-dark);
+        outline: 3px solid var(--gold-primary);
+        box-shadow: 
+            0 0 0 3px #1a0a03,
+            0 15px 40px rgba(0,0,0,0.95),
+            inset 0 0 60px rgba(0,0,0,0.85);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 0;
+    }
+
+    .table-board::before {
+        content: '';
+        position: absolute;
+        top: 8px; left: 8px; right: 8px; bottom: 8px;
+        border: 2px dashed rgba(212, 175, 55, 0.3);
+        border-radius: 46px;
+        pointer-events: none;
+    }
+
+    .table-logo {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        font-family: 'Cinzel', serif;
+        font-size: 32px;
+        font-weight: 900;
+        color: rgba(212, 175, 55, 0.06);
+        letter-spacing: 8px;
+        pointer-events: none;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    /* CARDS ARENA */
+    .arena {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 40px;
+        z-index: 2;
+        margin: auto 0;
+    }
+
+    .card-slot {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .slot-label {
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        color: rgba(255, 215, 0, 0.85);
+        text-transform: uppercase;
+        background: rgba(0,0,0,0.5);
+        padding: 3px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(212, 175, 55, 0.3);
+    }
+
+    /* 3D CARDS */
+    .card-container {
+        width: var(--card-width);
+        height: var(--card-height);
+        perspective: 1200px;
+    }
+
+    .card-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transform-style: preserve-3d;
+        border-radius: 12px;
+        box-shadow: 0 12px 25px rgba(0,0,0,0.7);
+    }
+
+    .card-container.flipped .card-inner {
+        transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .card-front {
+        background: #ffffff;
+        background-image: linear-gradient(135deg, #ffffff 0%, #f0f0f4 100%);
+        border: 2px solid #ddd;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 8px 10px;
+        color: #111;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        transform: rotateY(180deg);
+    }
+
+    .card-front.red { color: #d62828; }
+    .card-front.black { color: #1a1a1a; }
+
+    .card-corner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        line-height: 1;
+        font-weight: 800;
+    }
+
+    .card-corner.top-left { align-self: flex-start; }
+    .card-corner.bottom-right { align-self: flex-end; transform: rotate(180deg); }
+
+    .corner-val { font-size: 18px; font-family: 'Montserrat', sans-serif; font-weight: 900; }
+    .corner-suit { font-size: 15px; margin-top: 1px; }
+
+    /* 中央は数字を表示 */
+    .card-center {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 64px;
+        font-weight: 900;
+        font-family: 'Cinzel', 'Montserrat', serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        letter-spacing: -2px;
+    }
+
+    .card-back {
+        background: #800a28;
+        background-image: radial-gradient(circle at 50% 50%, #a81339 0%, #4a0014 100%);
+        border: 3px solid #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card-back-pattern {
+        width: calc(100% - 10px);
+        height: calc(100% - 10px);
+        border: 1px solid var(--gold-primary);
+        border-radius: 8px;
+        background-color: #54061a;
+        background-image: repeating-linear-gradient(45deg, rgba(212, 175, 55, 0.2) 0, rgba(212, 175, 55, 0.2) 10px, transparent 0, transparent 20px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card-back-emblem {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 1.5px solid var(--gold-primary);
+        background: rgba(0,0,0,0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gold-primary);
+        font-size: 20px;
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+    }
+
+    .card-container.win .card-inner { box-shadow: 0 0 25px #2ecc71, 0 0 10px #2ecc71; }
+    .card-container.lose .card-inner { box-shadow: 0 0 25px #e74c3c, 0 0 10px #e74c3c; }
+
+    /* MULTIPLIER & RESULT */
+    .multiplier-badge {
+        background: rgba(10, 10, 12, 0.85);
+        border: 1px solid var(--gold-primary);
+        padding: 6px 24px;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 700;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+    }
+
+    .multiplier-val {
+        font-size: 20px;
+        color: #ffd700;
+        font-weight: 900;
+    }
+
+    .result-banner {
+        font-size: 14px;
+        font-weight: 700;
+        text-align: center;
+        padding: 8px 16px;
+        border-radius: 12px;
+        background: rgba(10, 10, 15, 0.85);
+        border: 1px solid rgba(255, 215, 0, 0.3);
+        color: #ffffff;
+        width: 90%;
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+        backdrop-filter: blur(4px);
+    }
+
+    /* RIGHT: CONTROLS PANEL */
+    .controls-panel {
+        flex: 1;
+        background: linear-gradient(180deg, rgba(20, 15, 12, 0.95) 0%, rgba(8, 5, 3, 0.98) 100%);
+        padding: 18px 20px;
+        border-radius: 35px;
+        border: 1.5px solid rgba(212, 175, 55, 0.4);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .panel-header {
+        font-family: 'Cinzel', serif;
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--gold-primary);
+        text-align: center;
+        letter-spacing: 2px;
+        border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        padding-bottom: 6px;
+    }
+
+    .chip-selector-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #aaa;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        text-align: center;
+    }
+
+    .chip-selector {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .chip {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 4px dashed #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 10px;
+        color: #fff;
+        cursor: pointer;
+        box-shadow: 0 5px 10px rgba(0,0,0,0.6);
+        transition: transform 0.1s ease;
+    }
+
+    .chip:hover { transform: translateY(-2px) scale(1.05); }
+    .chip:active { transform: scale(0.95); }
+
+    .chip-1 { background: radial-gradient(circle, #3498db, #1d6fa5); }
+    .chip-5 { background: radial-gradient(circle, #e74c3c, #962d22); }
+    .chip-25 { background: radial-gradient(circle, #2ecc71, #1b8a4a); }
+    .chip-100 { background: radial-gradient(circle, #34495e, #1a252f); }
+    .chip-500 { background: radial-gradient(circle, #9b59b6, #5e3370); }
+
+    .bet-input-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(0,0,0,0.7);
+        padding: 6px 14px;
+        border-radius: 25px;
+        border: 1px solid rgba(212, 175, 55, 0.4);
+    }
+
+    .bet-input-container input {
+        background: transparent;
+        border: none;
+        color: #ffd700;
+        font-size: 20px;
+        font-weight: 900;
+        width: 100px;
+        text-align: center;
+        outline: none;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .btn {
+        padding: 14px 16px;
+        font-size: 15px;
+        font-weight: 900;
+        border-radius: 30px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    }
+
+    .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        filter: grayscale(80%);
+        transform: none !important;
+    }
+
+    .btn:active:not(:disabled) { transform: translateY(2px); }
+
+    .btn-gold {
+        background: linear-gradient(135deg, #ffe066 0%, #d4af37 50%, #aa7c11 100%);
+        color: #1a0f00;
+        width: 100%;
+    }
+
+    .btn-high {
+        background: linear-gradient(135deg, #ff5252 0%, #c62828 100%);
+        color: #ffffff;
+        flex: 1;
+    }
+
+    .btn-low {
+        background: linear-gradient(135deg, #448aff 0%, #1565c0 100%);
+        color: #ffffff;
+        flex: 1;
+    }
+
+    .btn-cashout {
+        background: linear-gradient(135deg, #69f0ae 0%, #2e7d32 100%);
+        color: #052110;
+        width: 100%;
+    }
+
+    .btn-sub {
+        background: rgba(255, 255, 255, 0.08);
+        color: #aaa;
+        font-size: 11px;
+        padding: 6px 14px;
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        cursor: pointer;
+        text-align: center;
+        transition: background 0.2s;
+    }
+
+    .btn-sub:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+
+    #fx-canvas {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        pointer-events: none;
+        z-index: 99;
+    }
+</style>
 </head>
-<body class="min-h-screen flex flex-col justify-between">
+<body>
 
-    <!-- ヘッダー / ナビゲーション -->
-    <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <i class="fa-solid font-bold fa-chess-king text-2xl text-amber-500"></i>
-            <h1 class="text-xl font-bold tracking-wide text-white">CHESS ONLINE</h1>
+<canvas id="fx-canvas"></canvas>
+
+<div class="app-container" id="game-app">
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <h1 class="brand-title gold-text">
+            👑 HIGH & LOW <span class="vip-tag">VIP WIDE</span>
+        </h1>
+        <div class="top-stats">
+            <div class="stat-badge">
+                <span class="stat-label">STREAK:</span>
+                <span class="stat-value" id="streak-display">0</span>
+            </div>
+            <div class="stat-badge">
+                <span class="stat-label">CHIPS:</span>
+                <span class="stat-value" id="coin-display">{{ coins }}</span>
+            </div>
         </div>
-        <!-- /games (ゲーム一覧に戻る) への導線 -->
-        <a href="/games" class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition duration-200">
-            <i class="fa-solid fa-arrow-left"></i>
-            <span>ゲーム一覧に戻る</span>
-        </a>
-    </header>
+    </div>
 
-    <!-- メインコンテンツ領域 -->
-    <main class="flex-1 container mx-auto px-4 py-8 max-w-4xl flex items-center justify-center">
+    <!-- MAIN LAYOUT -->
+    <div class="main-layout">
+        <!-- LEFT: CASINO TABLE BOARD -->
+        <div class="table-board">
+            <div class="table-logo">ROYAL HIGH & LOW</div>
 
-        <!-- ========================================== -->
-        <!-- 1. ロビー画面 (Lobby View) -->
-        <!-- ========================================== -->
-        <div id="lobby-view" class="w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-            
-            <!-- 左カラム：アクション（新規作成・参加） -->
-            <div class="space-y-6">
-                <!-- ルーム作成カード -->
-                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
-                    <h2 class="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-                        <i class="fa-solid fa-plus text-amber-500"></i>
-                        新しい対戦ルームを作る
-                    </h2>
-                    <p class="text-xs text-slate-400 mb-4">ボタンを押すと即座にルームコードが発行されます。</p>
-                    <form action="{{ url_for('chess_bp.create_room') }}" method="POST">
-                        <button type="submit" 
-                            class="w-full py-3.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 transition duration-200 flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-chess-board"></i>
-                            ルームを作成して入室
-                        </button>
-                    </form>
-                </div>
-
-                <!-- 参加コードで入室カード -->
-                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
-                    <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-key text-emerald-500"></i>
-                        参加コードで対戦に参加
-                    </h2>
-                    <form action="{{ url_for('chess_bp.join_room') }}" method="POST" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">4桁のコード</label>
-                            <input type="text" name="room_code" placeholder="例: X7K2" required maxlength="4"
-                                class="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-white tracking-widest uppercase font-mono placeholder-slate-600 focus:outline-none focus:border-emerald-500 transition">
-                        </div>
-                        <button type="submit" 
-                            class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition duration-200 flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-right-to-bracket"></i>
-                            対戦に参加
-                        </button>
-                    </form>
-                </div>
+            <!-- MULTIPLIER BADGE -->
+            <div class="multiplier-badge">
+                <span>CURRENT MULTIPLIER:</span>
+                <span class="multiplier-val" id="mult-display">x1.00</span>
             </div>
 
-            <!-- 右カラム：ランダム対戦可能ルームリスト -->
-            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl backdrop-blur-sm h-full flex flex-col justify-between">
-                <div>
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-shuffle text-indigo-400"></i>
-                            対戦可能ルーム (ランダム3件)
-                        </h2>
-                        <span class="text-xs bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-500/30">Active</span>
-                    </div>
-
-                    {% if rooms and rooms|length > 0 %}
-                        <div class="space-y-3">
-                            {% for code, data in rooms.items() %}
-                            <div class="p-4 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between hover:border-slate-700 transition">
-                                <div>
-                                    <div class="text-sm font-semibold text-slate-200">{{ data.host }} のルーム</div>
-                                    <div class="text-xs text-slate-400 mt-0.5 font-mono">CODE: <span class="text-amber-400 font-bold">{{ code }}</span></div>
+            <!-- CARDS ARENA -->
+            <div class="arena">
+                <!-- BASE CARD SLOT -->
+                <div class="card-slot">
+                    <div class="slot-label">BASE CARD</div>
+                    <div class="card-container flipped" id="card-base-container">
+                        <div class="card-inner">
+                            <div class="card-front" id="card-base-front">
+                                <div class="card-corner top-left">
+                                    <span class="corner-val" id="base-val-tl">?</span>
+                                    <span class="corner-suit" id="base-suit-tl">♠</span>
                                 </div>
-                                <form action="{{ url_for('chess_bp.join_room') }}" method="POST">
-                                    <input type="hidden" name="room_code" value="{{ code }}">
-                                    <button type="submit" class="px-3.5 py-2 bg-slate-800 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-lg text-xs font-semibold transition duration-200 flex items-center gap-1.5">
-                                        <span>参加</span>
-                                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                                    </button>
-                                </form>
+                                <div class="card-center" id="base-val-center">?</div>
+                                <div class="card-corner bottom-right">
+                                    <span class="corner-val" id="base-val-br">?</span>
+                                    <span class="corner-suit" id="base-suit-br">♠</span>
+                                </div>
                             </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-12 text-slate-500">
-                            <i class="fa-solid fa-ghost text-4xl mb-3 block opacity-50"></i>
-                            <p class="text-sm">現在待機中のルームはありません。</p>
-                            <p class="text-xs mt-1 text-slate-600 font-sans">新しいルームを作成してみましょう！</p>
-                        </div>
-                    {% endif %}
-                </div>
-
-                <div class="mt-6 pt-4 border-t border-slate-800/80 text-xs text-slate-500 text-center">
-                    Render Server In-Memory Management Active
-                </div>
-            </div>
-        </div>
-
-        <!-- ========================================== -->
-        <!-- 2. 対戦画面 (Game Room View) -->
-        <!-- ========================================== -->
-        <div id="game-view" class="w-full hidden flex-col items-center">
-            
-            <!-- ルームヘッダー情報 -->
-            <div class="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-6 flex items-center justify-between shadow-lg">
-                <div class="flex items-center gap-4">
-                    <div>
-                        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold block">ROOM CODE</span>
-                        <div class="flex items-center gap-2">
-                            <span id="display-room-code" class="text-xl font-black font-mono text-amber-400">----</span>
-                            <button onclick="copyRoomCode()" class="text-slate-400 hover:text-white text-xs p-1" title="コードをコピー">
-                                <i class="fa-regular fa-copy"></i>
-                            </button>
+                            <div class="card-back">
+                                <div class="card-back-pattern">
+                                    <div class="card-back-emblem">👑</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 対戦ステータス -->
-                <div class="text-right">
-                    <span id="game-status-badge" class="px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-xs font-semibold">
-                        対戦相手を待っています
-                    </span>
-                    <div id="players-info" class="text-xs text-slate-400 mt-1">
-                        <span id="host-name">Host</span> vs <span id="guest-name">...</span>
+                <!-- NEXT CARD SLOT -->
+                <div class="card-slot">
+                    <div class="slot-label">NEXT CARD</div>
+                    <div class="card-container" id="card-next-container">
+                        <div class="card-inner">
+                            <div class="card-front" id="card-next-front">
+                                <div class="card-corner top-left">
+                                    <span class="corner-val" id="next-val-tl">?</span>
+                                    <span class="corner-suit" id="next-suit-tl">♠</span>
+                                </div>
+                                <div class="card-center" id="next-val-center">?</div>
+                                <div class="card-corner bottom-right">
+                                    <span class="corner-val" id="next-val-br">?</span>
+                                    <span class="corner-suit" id="next-suit-br">♠</span>
+                                </div>
+                            </div>
+                            <div class="card-back">
+                                <div class="card-back-pattern">
+                                    <div class="card-back-emblem">👑</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- チェスボード構造 -->
-            <div class="relative">
-                <div id="chess-board" class="board-grid"></div>
-            </div>
-
-            <!-- ボトムコントロール -->
-            <div class="w-full max-w-xl mt-6 flex items-center justify-between">
-                <a href="{{ url_for('chess_bp.index') }}" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-medium transition flex items-center gap-2">
-                    <i class="fa-solid fa-door-open"></i>
-                    ロビーへ戻る
-                </a>
-                
-                <div class="text-xs text-slate-400">
-                    操作中のプレイヤー: <span id="current-player" class="font-bold text-white">---</span>
-                </div>
+            <!-- RESULT BANNER -->
+            <div class="result-banner" id="result-message">
+                ベット額を設定して「GAME START」を押してください
             </div>
         </div>
 
-    </main>
+        <!-- RIGHT: CONTROLS PANEL -->
+        <div class="controls-panel">
+            <div class="panel-header">BETTING CONTROLS</div>
 
-    <!-- フッター -->
-    <footer class="bg-slate-950 py-4 text-center text-xs text-slate-600 border-t border-slate-900">
-        Flask & Blueprint Chess Engine • Powered by Render
-    </footer>
+            <!-- CHIP SELECTOR -->
+            <div>
+                <div class="chip-selector-label">ADD CHIPS</div>
+                <div class="chip-selector" id="chip-area">
+                    <div class="chip chip-1" onclick="addBet(1)">$1</div>
+                    <div class="chip chip-5" onclick="addBet(5)">$5</div>
+                    <div class="chip chip-25" onclick="addBet(25)">$25</div>
+                    <div class="chip chip-100" onclick="addBet(100)">$100</div>
+                    <div class="chip chip-500" onclick="addBet(500)">$500</div>
+                </div>
+            </div>
 
-    <!-- クライアントサイド JavaScript -->
-    <script>
-        // サーバーから渡されたテンプレート変数を取得
-        const currentRoomCode = "{{ room_code if room_code else '' }}";
-        const roomData = {% if room_data %}{{ room_data | tojson }}{% else %}null{% endif %};
-        const playerName = "{{ player_name if player_name else '' }}";
+            <!-- BET INPUT -->
+            <div class="bet-input-container">
+                <span style="color:#aaa; font-weight:800; font-size:12px;">BET:</span>
+                <input type="number" id="bet-amount" value="10" min="1">
+                <button class="btn-sub" onclick="clearBet()">CLEAR</button>
+            </div>
 
-        // チェスの初期配置 (標準UNICODE表現)
-        const initialBoard = [
-            ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'],
-            ['♟', '♟', '♟', '♟', '♟', '♟', '♟', '♟'],
-            ['', '', '', '', '', '', '', ''],
-            ['', '', '', '', '', '', '', ''],
-            ['', '', '', '', '', '', '', ''],
-            ['', '', '', '', '', '', '', ''],
-            ['♙', '♙', '♙', '♙', '♙', '♙', '♙', '♙'],
-            ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']
-        ];
+            <!-- ACTION BUTTONS -->
+            <div id="action-controls" style="display: flex; flex-direction: column; gap: 8px;">
+                <button class="btn btn-gold" id="start-btn" onclick="handleStartGame()">
+                    ✨ GAME START
+                </button>
 
-        let selectedSquare = null;
+                <div class="btn-group" id="choice-btns" style="display: none;">
+                    <button class="btn btn-high" id="btn-high" onclick="handlePlay('HIGH')">
+                        ▲ HIGH
+                    </button>
+                    <button class="btn btn-low" id="btn-low" onclick="handlePlay('LOW')">
+                        ▼ LOW
+                    </button>
+                </div>
 
-        // 画面初期化
-        window.onload = () => {
-            if (currentRoomCode && roomData) {
-                // 対戦画面（Game View）を表示
-                document.getElementById('lobby-view').classList.add('hidden');
-                document.getElementById('game-view').classList.remove('hidden');
-                document.getElementById('game-view').classList.add('flex');
+                <button class="btn btn-cashout" id="cashout-btn" style="display: none;" onclick="handleCashout()">
+                    💰 CASH OUT (<span id="win-amount">$0</span>)
+                </button>
+
+                <button class="btn btn-gold" id="retry-btn" style="display: none;" onclick="resetToBetMode()">
+                    ✨ もう一度遊ぶ
+                </button>
+            </div>
+
+            <button class="btn-sub" onclick="location.href='/games'">◀ ゲーム一覧へ戻る</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * HIGH & LOW FRONTEND ENGINE
+ */
+let gameState = {
+    coins: parseInt("{{ coins }}") || 1000,
+    currentBet: 10,
+    baseCard: null,
+    nextCard: null,
+    streak: 0,
+    multiplier: 1.0,
+    isPlaying: false,
+    isProcessing: false // 連打防止ロックフラグ
+};
+
+window.onload = function() {
+    initFxCanvas();
+    updateCoinsUI();
+};
+
+function setButtonsLock(locked) {
+    gameState.isProcessing = locked;
+    document.getElementById('btn-high').disabled = locked;
+    document.getElementById('btn-low').disabled = locked;
+    const cashoutBtn = document.getElementById('cashout-btn');
+    if (cashoutBtn) cashoutBtn.disabled = locked;
+}
+
+function updateCoinsUI() {
+    document.getElementById('coin-display').textContent = gameState.coins.toLocaleString();
+    document.getElementById('streak-display').textContent = gameState.streak;
+    document.getElementById('mult-display').textContent = `x${gameState.multiplier.toFixed(2)}`;
+}
+
+function updateCardUI(target, cardData) {
+    if (!cardData) return;
+    const frontEl = document.getElementById(`card-${target}-front`);
+    frontEl.className = `card-front ${cardData.color === 'red' ? 'red' : 'black'}`;
+    
+    document.getElementById(`${target}-val-tl`).textContent = cardData.val_str;
+    document.getElementById(`${target}-suit-tl`).textContent = cardData.symbol;
+    document.getElementById(`${target}-val-center`).textContent = cardData.val_str;
+    document.getElementById(`${target}-val-br`).textContent = cardData.val_str;
+    document.getElementById(`${target}-suit-br`).textContent = cardData.symbol;
+}
+
+function addBet(amount) {
+    if (gameState.isPlaying || gameState.isProcessing) return;
+    const input = document.getElementById('bet-amount');
+    let current = parseInt(input.value) || 0;
+    input.value = Math.min(gameState.coins, current + amount);
+}
+
+function clearBet() {
+    if (gameState.isPlaying || gameState.isProcessing) return;
+    document.getElementById('bet-amount').value = 0;
+}
+
+// 1. GAME START
+async function handleStartGame() {
+    if (gameState.isProcessing) return;
+
+    const betInput = parseInt(document.getElementById('bet-amount').value);
+    if (!betInput || betInput <= 0 || betInput > gameState.coins) {
+        setMessage("正しいベット額を入力してください");
+        return;
+    }
+
+    gameState.isProcessing = true;
+    document.getElementById('start-btn').disabled = true;
+
+    try {
+        const response = await fetch("/highlow_start", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ bet: betInput })
+        });
+        const data = await response.json();
+
+        if (!data.success) {
+            setMessage(data.msg);
+            gameState.isProcessing = false;
+            document.getElementById('start-btn').disabled = false;
+            return;
+        }
+
+        gameState.coins = data.coins;
+        gameState.currentBet = data.bet;
+        gameState.streak = 0;
+        gameState.multiplier = 1.0;
+        gameState.baseCard = data.base_card;
+        gameState.isPlaying = true;
+
+        // UI Reset
+        updateCoinsUI();
+        updateCardUI('base', gameState.baseCard);
+        
+        document.getElementById('card-base-container').classList.add('flipped');
+        document.getElementById('card-next-container').classList.remove('flipped', 'win', 'lose');
+        
+        // Control Mode Toggle
+        document.getElementById('start-btn').style.display = 'none';
+        document.getElementById('retry-btn').style.display = 'none';
+        document.getElementById('chip-area').style.pointerEvents = 'none';
+        document.getElementById('bet-amount').disabled = true;
+        document.getElementById('choice-btns').style.display = 'flex';
+        document.getElementById('cashout-btn').style.display = 'none';
+
+        setMessage(data.msg);
+
+    } catch(e) {
+        console.error(e);
+        setMessage("通信エラーが発生しました");
+    } finally {
+        setButtonsLock(false);
+        document.getElementById('start-btn').disabled = false;
+    }
+}
+
+// 2. HIGH / LOW CHOICE PLAY
+async function handlePlay(choice) {
+    if (!gameState.isPlaying || gameState.isProcessing) return;
+
+    // ★ 連打防止のためボタン即時ロック
+    setButtonsLock(true);
+
+    try {
+        const response = await fetch("/highlow_play2", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ choice: choice })
+        });
+        const data = await response.json();
+
+        if (!data.success) {
+            setMessage(data.msg);
+            setButtonsLock(false);
+            return;
+        }
+
+        gameState.nextCard = data.next_card;
+        updateCardUI('next', gameState.nextCard);
+
+        const nextContainer = document.getElementById('card-next-container');
+        nextContainer.classList.add('flipped');
+
+        // カードめくりアニメーション完了待ち（0.5s後）
+        setTimeout(() => {
+            if (data.result === 'win') {
+                spawnParticles();
+                nextContainer.classList.add('win');
+                gameState.streak = data.streak;
+                gameState.multiplier = data.multiplier;
+                updateCoinsUI();
+
+                document.getElementById('cashout-btn').style.display = 'block';
+                document.getElementById('win-amount').textContent = `$${data.est_payout.toLocaleString()}`;
+
+                // Win Case: 次のカードをベースカードとして引き継ぎ（1.2s後）
+                setTimeout(() => {
+                    gameState.baseCard = gameState.nextCard;
+                    updateCardUI('base', gameState.baseCard);
+                    nextContainer.classList.remove('flipped', 'win');
+                    
+                    // アニメーション完了後にロック解除
+                    setButtonsLock(false);
+                }, 1200);
+
+            } else if (data.result === 'draw') {
+                gameState.baseCard = gameState.nextCard;
+                updateCardUI('base', gameState.baseCard);
+                setTimeout(() => {
+                    nextContainer.classList.remove('flipped');
+                    setButtonsLock(false);
+                }, 1000);
+
+            } else { // Lose
+                nextContainer.classList.add('lose');
+                gameState.isPlaying = false;
                 
-                initGameRoom();
-            } else {
-                // ロビー画面（Lobby View）を表示
-                document.getElementById('lobby-view').classList.remove('hidden');
-                document.getElementById('game-view').classList.add('hidden');
-            }
-        };
+                document.getElementById('choice-btns').style.display = 'none';
+                document.getElementById('cashout-btn').style.display = 'none';
+                document.getElementById('retry-btn').style.display = 'block';
 
-        // 対戦ルーム表示処理
-        function initGameRoom() {
-            document.getElementById('display-room-code').innerText = currentRoomCode;
-            document.getElementById('host-name').innerText = roomData.host || 'Host';
-            document.getElementById('guest-name').innerText = roomData.guest || '待機中';
-            document.getElementById('current-player').innerText = playerName || 'Guest';
-
-            const badge = document.getElementById('game-status-badge');
-            if (roomData.status === 'playing') {
-                badge.innerText = '対戦中';
-                badge.className = 'px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-xs font-semibold';
-            } else {
-                badge.innerText = '対戦相手を待っています';
-                badge.className = 'px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-xs font-semibold';
+                // 敗北時も処理完了でロック解除
+                gameState.isProcessing = false;
             }
 
-            renderBoard();
-        }
+            setMessage(data.msg);
+        }, 500);
 
-        // 8x8 チェスボードを描画
-        function renderBoard() {
-            const boardEl = document.getElementById('chess-board');
-            boardEl.innerHTML = '';
+    } catch(e) {
+        console.error(e);
+        setMessage("通信エラーが発生しました");
+        setButtonsLock(false);
+    }
+}
 
-            for (let r = 0; r < 8; r++) {
-                for (let c = 0; c < 8; c++) {
-                    const isWhite = (r + c) % 2 === 0;
-                    const square = document.createElement('div');
-                    square.className = `square ${isWhite ? 'white' : 'black'}`;
-                    square.dataset.row = r;
-                    square.dataset.col = c;
+// 3. CASH OUT
+async function handleCashout() {
+    if (!gameState.isPlaying || gameState.isProcessing) return;
 
-                    const piece = initialBoard[r][c];
-                    if (piece) {
-                        const pieceEl = document.createElement('span');
-                        pieceEl.className = 'piece';
-                        pieceEl.innerText = piece;
-                        square.appendChild(pieceEl);
-                    }
+    setButtonsLock(true);
 
-                    square.addEventListener('click', () => handleSquareClick(r, c, square));
-                    boardEl.appendChild(square);
-                }
-            }
-        }
+    try {
+        const response = await fetch("/highlow_cashout", { method: "POST" });
+        const data = await response.json();
 
-        // マス選択ロジック（UI用デモ操作）
-        function handleSquareClick(r, c, el) {
-            // 前の選択を解除
-            document.querySelectorAll('.square').forEach(s => s.classList.remove('selected'));
+        if (data.success) {
+            spawnParticles();
+            gameState.coins = data.coins;
+            gameState.isPlaying = false;
+            updateCoinsUI();
+
+            setMessage(data.msg);
             
-            if (selectedSquare && selectedSquare.r === r && selectedSquare.c === c) {
-                selectedSquare = null;
-                return;
-            }
+            document.getElementById('choice-btns').style.display = 'none';
+            document.getElementById('cashout-btn').style.display = 'none';
+            document.getElementById('retry-btn').style.display = 'block';
+        }
+    } catch(e) {
+        console.error(e);
+    } finally {
+        gameState.isProcessing = false;
+    }
+}
 
-            selectedSquare = { r, c };
-            el.classList.add('selected');
+function resetToBetMode() {
+    document.getElementById('start-btn').style.display = 'block';
+    document.getElementById('retry-btn').style.display = 'none';
+    document.getElementById('chip-area').style.pointerEvents = 'auto';
+    document.getElementById('bet-amount').disabled = false;
+    document.getElementById('card-next-container').classList.remove('flipped', 'win', 'lose');
+    document.getElementById('card-base-container').classList.remove('win', 'lose');
+    
+    gameState.streak = 0;
+    gameState.multiplier = 1.0;
+    gameState.isProcessing = false;
+    updateCoinsUI();
+
+    setMessage("ベット額を設定して「GAME START」を押してください");
+}
+
+function setMessage(msg) {
+    document.getElementById('result-message').textContent = msg;
+}
+
+/* PARTICLES FX Engine */
+let canvas, ctx, particles = [];
+
+function initFxCanvas() {
+    canvas = document.getElementById('fx-canvas');
+    ctx = canvas.getContext('2d');
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    requestAnimationFrame(renderParticles);
+}
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+function spawnParticles() {
+    for (let i = 0; i < 60; i++) {
+        particles.push({
+            x: canvas.width * 0.45,
+            y: canvas.height * 0.4,
+            vx: (Math.random() - 0.5) * 16,
+            vy: (Math.random() - 0.7) * 16,
+            size: Math.random() * 6 + 3,
+            color: `hsl(${Math.random() * 30 + 40}, 100%, ${Math.random() * 30 + 50}%)`,
+            alpha: 1,
+            decay: Math.random() * 0.02 + 0.015
+        });
+    }
+}
+
+function renderParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.35;
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0) {
+            particles.splice(i, 1);
+            continue;
         }
 
-        // ルームコードのクリップボードコピー処理
-        function copyRoomCode() {
-            if (!currentRoomCode) return;
-            const tempInput = document.createElement('input');
-            tempInput.value = currentRoomCode;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-            
-            alert('参加コード ' + currentRoomCode + ' をコピーしました！');
-        }
-    </script>
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+    requestAnimationFrame(renderParticles);
+}
+</script>
 </body>
 </html>
