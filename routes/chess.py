@@ -1,6 +1,6 @@
 import random
 import string
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, Blueprint
 from flask_login import UserMixin, current_user
 
 app = Flask(__name__, template_folder='.', static_folder='static')
