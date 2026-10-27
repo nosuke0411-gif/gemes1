@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify
 from flask_login import current_user
 import random
 import string
@@ -75,3 +75,20 @@ def room(room_code):
     room_data = rooms[room_code]
     
     return render_template('chess.html', rooms={}, room_code=room_code, room_data=room_data, player_name=player_name)
+
+@chess_bp.route('/leave/<room_code>', methods=['POST', 'GET'])
+def leave_room(room_code):
+    """ 退出処理（ホストが待機中に退出した場合はルーム削除） """
+    player_name = get_current_user_name()
+    
+    if room_code in rooms:
+        room_data = rooms[room_code]
+        # ホストかつ待機中の場合はルームを破棄
+        if room_data['host'] == player_name and room_data['status'] == 'waiting':
+            rooms.pop(room_code, None)
+    
+    # SendBeaconなどのAPIリクエストの場合はJSONレスポンス
+    if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.method == 'POST':
+        return jsonify({'status': 'success', 'message': 'Room left/deleted'})
+    
+    return redirect(url_for('chess_bp.index'))
