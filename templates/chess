@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>オンラインチェスルーム</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at top center, #1e1b4b 0%, #0f172a 50%, #020617 100%);
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .chessboard-wrapper {
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7), 0 0 30px rgba(99, 102, 241, 0.15);
+        }
+
+        .chessboard {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            width: min(88vw, 480px);
+            height: min(88vw, 480px);
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        .square {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .square.light { background-color: #e2e8f0; color: #475569; }
+        .square.dark { background-color: #475569; color: #cbd5e1; }
+
+        /* Highlight & Active States */
+        .square.selected {
+            background-color: #6366f1 !important;
+            box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .square.last-move {
+            background-color: rgba(234, 179, 8, 0.45) !important;
+        }
+
+        .square.in-check {
+            background-color: rgba(239, 68, 68, 0.7) !important;
+            animation: pulse-red 1.2s infinite;
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Move Hint Marker */
+        .square.highlight::after {
+            content: '';
+            position: absolute;
+            width: 28%;
+            height: 28%;
+            background-color: rgba(99, 102, 241, 0.65);
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(99, 102, 241, 0.8);
+            pointer-events: none;
+        }
+
+        .square.highlight.has-piece::after {
+            width: 88%;
+            height: 88%;
+            background-color: transparent;
+            border: 4px solid rgba(239, 68, 68, 0.75);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+
+        /* Piece Graphics & Animations */
+        .piece-img {
+            width: 82%;
+            height: 82%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
+            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .square:hover .piece-img {
+            transform: scale(1.12) translateY(-2px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between antialiased selection:bg-indigo-500 selection:text-white">
+
+    <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-40 px-4 md:px-8 py-3.5 flex justify-between items-center shadow-lg">
+        <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-tr from-indigo-600 to-violet-500 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/20 ring-1 ring-white/20">
+                <i class="fa-solid fa-chess-knight text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-lg md:text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">オンラインチェス</h1>
+                <p class="text-[11px] text-indigo-400/90 font-medium tracking-wide">インメモリリアルタイム対戦</p>
+            </div>
+        </div>
+        <div id="connection-status" class="flex items-center space-x-2 bg-slate-800/80 px-3.5 py-1.5 rounded-full text-xs font-semibold border border-slate-700/60 shadow-inner">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" id="status-dot"></span>
+            <span id="status-text" class="text-slate-300">サーバー接続中</span>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center items-center">
+        
+        <div id="lobby-screen" class="w-full max-w-3xl bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
+            <div class="text-center space-y-3">
+                <div class="flex items-center justify-center space-x-2">
+                    <span class="px-3 py-1 bg-indigo-500/10 text-indigo-400 rounded-full text-xs font-semibold border border-indigo-500/20">LOBBY</span>
+                </div>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">対局ルームを選択</h2>
+                <p class="text-xs md:text-sm text-slate-400">新しいルームを作成するか、コードを入力して参加してください。</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="space-y-4 bg-slate-950/50 p-5 rounded-2xl border border-slate-800/80 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">ルームの作成 & 参加</h3>
+                        <button onclick="createRoom()" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-3.5 rounded-xl transition-all duration-200 shadow-lg shadow-indigo-600/25 active:scale-[0.98] flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-plus-circle text-base"></i>
+                            <span>新規ルーム作成</span>
+                        </button>
+
+                        <div class="relative flex py-3 items-center">
+                            <div class="flex-grow border-t border-slate-800"></div>
+                            <span class="flex-shrink mx-3 text-slate-500 text-xs font-medium">または</span>
+                            <div class="flex-grow border-t border-slate-800"></div>
+                        </div>
+
+                        <div class="flex space-x-2">
+                            <input type="text" id="join-room-code" maxlength="4" placeholder="CODE (例: A1B2)" class="flex-1 bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sm text-white uppercase tracking-widest font-mono focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+                            <button onclick="joinRoom()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-5 py-2.5 rounded-xl transition shadow-lg shadow-emerald-600/20 active:scale-[0.98] text-sm">参加</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950/50 p-5 rounded-2xl border border-slate-800/80 flex flex-col h-72 md:h-auto">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">公開ルーム一覧</h3>
+                        <button onclick="fetchRoomList()" class="text-xs text-indigo-400 hover:text-indigo-300 flex items-center space-x-1 font-semibold transition">
+                            <i class="fa-solid fa-rotate-right"></i>
+                            <span>更新</span>
+                        </button>
+                    </div>
+                    <div id="room-list-container" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs">
+                        <div class="text-slate-500 italic text-center py-8">読み込み中...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 対局ルームを選択（ロビー）全体の下部にあるゲーム一覧へ戻るボタン -->
+            <div class="pt-2 border-t border-slate-800/80">
+                <button id="backBtn" onclick="location.href='/games'" class="w-full bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white font-semibold py-3 px-4 rounded-xl text-xs transition border border-slate-700/60 flex items-center justify-center space-x-2 shadow-md active:scale-[0.99]">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>ゲーム一覧へ戻る</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="w-full max-w-6xl hidden grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- Left Info Panel -->
+            <div class="lg:col-span-3 bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-5 shadow-2xl space-y-5">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">ROOM CODE</span>
+                        <h3 id="display-room-code" class="text-xl font-mono font-extrabold text-indigo-400 tracking-wider">----</h3>
+                    </div>
+                    <button onclick="copyRoomCode()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition border border-slate-700 flex items-center space-x-1.5 active:scale-95">
+                        <i class="fa-regular fa-copy"></i>
+                        <span>コピー</span>
+                    </button>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <div class="flex justify-between items-center bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/60">
+                        <span class="text-slate-400 font-medium">あなたの役割:</span>
+                        <span id="player-role" class="font-bold text-emerald-400">観戦中</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/60">
+                        <span class="text-slate-400 font-medium">手番:</span>
+                        <span id="turn-indicator" class="font-bold text-amber-400 flex items-center space-x-1">
+                            <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                            <span>白の手番</span>
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/60">
+                        <span class="text-slate-400 font-medium">ステータス:</span>
+                        <span id="game-status-text" class="font-bold text-slate-200">対局待ち</span>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-800">
+                    <button onclick="leaveRoom()" class="w-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-semibold py-2.5 rounded-xl text-xs transition active:scale-[0.98]">
+                        <i class="fa-solid fa-door-open mr-1.5"></i>退出する
+                    </button>
+                </div>
+            </div>
+
+            <!-- Center Chessboard -->
+            <div class="lg:col-span-6 flex flex-col items-center justify-center">
+                <!-- Top Player (Black Side) Bar -->
+                <div id="player-top-card" class="w-[min(88vw,480px)] mb-3 bg-slate-900/60 backdrop-blur-md border border-slate-800/80 rounded-xl px-4 py-2 flex justify-between items-center text-xs">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 rounded-full bg-slate-900 border border-slate-500"></div>
+                        <span id="player-black-name" class="font-bold text-slate-300">黒: 待機中</span>
+                    </div>
+                    <div id="captured-by-white" class="flex space-x-0.5 opacity-80 h-5"></div>
+                </div>
+
+                <div class="chessboard-wrapper p-2 bg-slate-800/90 border border-slate-700/80 rounded-2xl">
+                    <div id="chessboard" class="chessboard"></div>
+                </div>
+
+                <!-- Bottom Player (White Side) Bar -->
+                <div id="player-bottom-card" class="w-[min(88vw,480px)] mt-3 bg-slate-900/60 backdrop-blur-md border border-slate-800/80 rounded-xl px-4 py-2 flex justify-between items-center text-xs">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 rounded-full bg-white border border-slate-300"></div>
+                        <span id="player-white-name" class="font-bold text-slate-300">白: 待機中</span>
+                    </div>
+                    <div id="captured-by-black" class="flex space-x-0.5 opacity-80 h-5"></div>
+                </div>
+            </div>
+
+            <!-- Right History Log -->
+            <div class="lg:col-span-3 bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-5 shadow-2xl flex flex-col h-[480px]">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center space-x-2 border-b border-slate-800 pb-2">
+                    <i class="fa-solid fa-list-ul text-indigo-400"></i>
+                    <span>棋譜ログ</span>
+                </h4>
+                <div id="move-history" class="flex-1 bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 overflow-y-auto font-mono text-xs space-y-1.5">
+                    <div class="text-slate-500 italic text-center py-4">対局開始待ち...</div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <div id="custom-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
+            <div id="modal-icon" class="w-12 h-12 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto text-xl border border-indigo-500/30">
+                <i class="fa-solid fa-info"></i>
+            </div>
+            <h3 id="modal-title" class="text-base font-bold text-white">通知</h3>
+            <p id="modal-message" class="text-xs text-slate-300 leading-relaxed">メッセージ内容</p>
+            <button onclick="closeModal()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs transition active:scale-[0.98]">閉じる</button>
+        </div>
+    </div>
+
+    <script>
+        let currentRoomCode = null;
+        let myColor = null;
+        let chess = new Chess();
+        let selectedSquare = null;
+        let pollTimer = null;
+        let listTimer = null;
+        let lastMove = null;
+
+        const pieceImages = {
+            'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
+            'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+            'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
+            'b': 'https://upload.wikimedia.org/wikipedia/commons/9/9b/Chess_bdt45.svg',
+            'q': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
+            'k': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg',
+            'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg',
+            'R': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
+            'N': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
+            'B': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
+            'Q': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
+            'K': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'
+        };
+
+        window.onload = function() {
+            fetchRoomList();
+            listTimer = setInterval(fetchRoomList, 3000);
+        };
+
+        function showModal(title, message, isError = false) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            const icon = document.getElementById('modal-icon');
+            if (isError) {
+                icon.className = "w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto text-xl border border-rose-500/30";
+                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            } else {
+                icon.className = "w-12 h-12 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto text-xl border border-indigo-500/30";
+                icon.innerHTML = '<i class="fa-solid fa-info"></i>';
+            }
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('custom-modal').classList.add('hidden'); }
+
+        async function fetchRoomList() {
+            try {
+                const res = await fetch('/api/chess/get_rooms');
+                const data = await res.json();
+                if (data.success) renderRoomList(data.rooms);
+            } catch (err) {
+                console.error("Room list error:", err);
+            }
+        }
+
+        function renderRoomList(rooms) {
+            const container = document.getElementById('room-list-container');
+            if (!rooms || rooms.length === 0) {
+                container.innerHTML = '<div class="text-slate-500 italic text-center py-8">アクティブなルームはありません</div>';
+                return;
+            }
+
+            container.innerHTML = rooms.map(room => {
+                const isFull = room.white_player && room.black_player;
+                const statusBadge = isFull 
+                    ? '<span class="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-400 border border-slate-700">満員(観戦)</span>'
+                    : '<span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">参加可能</span>';
+
+                return `
+                    <div onclick="joinRoomByCode('${room.room_code}')" class="bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800/80 hover:border-indigo-500/50 p-3 rounded-xl flex justify-between items-center cursor-pointer transition group">
+                        <div>
+                            <div class="font-bold text-indigo-300 text-xs flex items-center space-x-2 font-mono">
+                                <span>${room.room_code}</span>
+                                ${statusBadge}
+                            </div>
+                            <div class="text-[11px] text-slate-400 mt-1">
+                                白: <span class="text-slate-200 font-medium">${room.white_player || '待機中'}</span> | 黒: <span class="text-slate-200 font-medium">${room.black_player || '待機中'}</span>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-600 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all text-xs"></i>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function joinRoomByCode(code) {
+            document.getElementById('join-room-code').value = code;
+            joinRoom();
+        }
+
+        async function createRoom() {
+            try {
+                const res = await fetch('/api/chess/create_room', { method: 'POST' });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+
+                currentRoomCode = data.room_code;
+                myColor = data.color;
+                enterRoomUI();
+                startPolling();
+            } catch (err) {
+                showModal("エラー", "ルーム作成に失敗しました: " + err.message, true);
+            }
+        }
+
+        async function joinRoom() {
+            const code = document.getElementById('join-room-code').value.trim().toUpperCase();
+            if (!code) {
+                showModal("エラー", "ルームコードを入力してください。", true);
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/chess/join_room', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ room_code: code })
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+
+                currentRoomCode = code;
+                myColor = data.color;
+                if (data.fen) chess.load(data.fen);
+
+                enterRoomUI();
+                startPolling();
+            } catch (err) {
+                showModal("参加エラー", err.message, true);
+            }
+        }
+
+        function enterRoomUI() {
+            if (listTimer) clearInterval(listTimer);
+            document.getElementById('lobby-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('display-room-code').innerText = currentRoomCode;
+            document.getElementById('player-role').innerText = myColor === 'w' ? "白 (あなた)" : myColor === 'b' ? "黒 (あなた)" : "観戦者";
+            renderBoard();
+            updateGameStatus();
+        }
+
+        function leaveRoom() {
+            if (pollTimer) clearInterval(pollTimer);
+            currentRoomCode = null;
+            myColor = null;
+            lastMove = null;
+            chess.reset();
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('lobby-screen').classList.remove('hidden');
+            fetchRoomList();
+            listTimer = setInterval(fetchRoomList, 3000);
+        }
+
+        function copyRoomCode() {
+            navigator.clipboard.writeText(currentRoomCode);
+            showModal("コピー完了", "ルームコードをコピーしました！");
+        }
+
+        function startPolling() {
+            if (pollTimer) clearInterval(pollTimer);
+            pollTimer = setInterval(async () => {
+                if (!currentRoomCode) return;
+                try {
+                    const res = await fetch(`/api/chess/get_state?room_code=${currentRoomCode}`);
+                    const data = await res.json();
+                    if (data.success) {
+                        if (data.fen !== chess.fen()) {
+                            chess.load(data.fen);
+                            const history = chess.history({ verbose: true });
+                            if (history.length > 0) {
+                                lastMove = history[history.length - 1];
+                            }
+                            renderBoard();
+                        }
+                        
+                        if (data.white_player) document.getElementById('player-white-name').innerText = `白: ${data.white_player}`;
+                        if (data.black_player) document.getElementById('player-black-name').innerText = `黒: ${data.black_player}`;
+
+                        updateGameStatus(data.status);
+                    }
+                } catch (e) {
+                    console.error("Polling error:", e);
+                }
+            }, 1000);
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('chessboard');
+            boardEl.innerHTML = '';
+            const board = chess.board();
+
+            let checkSquare = null;
+            if (chess.in_check()) {
+                const turn = chess.turn();
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        const p = board[r][c];
+                        if (p && p.type === 'k' && p.color === turn) {
+                            checkSquare = String.fromCharCode(97 + c) + (8 - r);
+                        }
+                    }
+                }
+            }
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const squareEl = document.createElement('div');
+                    const sqName = String.fromCharCode(97 + c) + (8 - r);
+                    
+                    let classes = `square ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+                    if (lastMove && (lastMove.from === sqName || lastMove.to === sqName)) {
+                        classes += ' last-move';
+                    }
+                    if (checkSquare === sqName) {
+                        classes += ' in-check';
+                    }
+
+                    squareEl.className = classes;
+                    squareEl.dataset.square = sqName;
+
+                    const piece = board[r][c];
+                    if (piece) {
+                        const img = document.createElement('img');
+                        const pieceKey = piece.color === 'w' ? piece.type.toUpperCase() : piece.type;
+                        img.src = pieceImages[pieceKey];
+                        img.className = 'piece-img';
+                        img.alt = pieceKey;
+                        squareEl.appendChild(img);
+                    }
+
+                    squareEl.addEventListener('click', () => handleSquareClick(sqName));
+                    boardEl.appendChild(squareEl);
+                }
+            }
+            updateCapturedPieces();
+        }
+
+        function handleSquareClick(square) {
+            if (myColor === 'spectator' || chess.turn() !== myColor) return;
+
+            if (!selectedSquare) {
+                const piece = chess.get(square);
+                if (piece && piece.color === myColor) {
+                    selectedSquare = square;
+                    highlightSquares(square);
+                }
+            } else {
+                if (selectedSquare === square) {
+                    selectedSquare = null;
+                    renderBoard();
+                    return;
+                }
+
+                try {
+                    const move = chess.move({ from: selectedSquare, to: square, promotion: 'q' });
+                    if (move) {
+                        lastMove = move;
+                        selectedSquare = null;
+                        renderBoard();
+                        updateGameStatus('active');
+                        syncMoveToServer();
+                    } else {
+                        selectedSquare = null;
+                        renderBoard();
+                    }
+                } catch (e) {
+                    selectedSquare = null;
+                    renderBoard();
+                }
+            }
+        }
+
+        function highlightSquares(square) {
+            renderBoard();
+            const sqEl = document.querySelector(`[data-square="${square}"]`);
+            if (sqEl) sqEl.classList.add('selected');
+            
+            chess.moves({ square: square, verbose: true }).forEach(m => {
+                const targetEl = document.querySelector(`[data-square="${m.to}"]`);
+                if (targetEl) {
+                    targetEl.classList.add('highlight');
+                    if (chess.get(m.to)) {
+                        targetEl.classList.add('has-piece');
+                    }
+                }
+            });
+        }
+
+        async function syncMoveToServer() {
+            if (!currentRoomCode) return;
+            try {
+                await fetch('/api/chess/make_move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ room_code: currentRoomCode, fen: chess.fen() })
+                });
+            } catch (err) {
+                console.error("Sync error:", err);
+            }
+        }
+
+        function updateCapturedPieces() {
+            const history = chess.history({ verbose: true });
+            const capturedWhite = [];
+            const capturedBlack = [];
+
+            history.forEach(m => {
+                if (m.captured) {
+                    if (m.color === 'w') {
+                        capturedBlack.push(m.captured);
+                    } else {
+                        capturedWhite.push(m.captured.toUpperCase());
+                    }
+                }
+            });
+
+            const renderPieceIcons = (pieces) => pieces.map(p => `<img src="${pieceImages[p]}" class="w-4 h-4 inline-block drop-shadow">`).join('');
+            document.getElementById('captured-by-white').innerHTML = renderPieceIcons(capturedBlack);
+            document.getElementById('captured-by-black').innerHTML = renderPieceIcons(capturedWhite);
+        }
+
+        function updateGameStatus(serverStatus = 'active') {
+            const turnText = chess.turn() === 'w' ? '白' : '黒';
+            document.getElementById('turn-indicator').innerHTML = `
+                <span class="w-2 h-2 rounded-full ${chess.turn() === 'w' ? 'bg-white' : 'bg-slate-900 border border-slate-600'} animate-ping"></span>
+                <span>${turnText}の手番</span>
+            `;
+            
+            const statusText = document.getElementById('game-status-text');
+            
+            if (serverStatus === 'waiting') {
+                statusText.innerText = "対局相手を待っています...";
+                statusText.className = "font-bold text-amber-400";
+            } else if (chess.in_checkmate()) {
+                statusText.innerText = "チェックメイト！";
+                statusText.className = "font-bold text-rose-500";
+            } else if (chess.in_draw()) {
+                statusText.innerText = "引き分け";
+                statusText.className = "font-bold text-slate-400";
+            } else if (chess.in_check()) {
+                statusText.innerText = "王手（チェック）";
+                statusText.className = "font-bold text-rose-400 animate-pulse";
+            } else {
+                statusText.innerText = "対局中";
+                statusText.className = "font-bold text-emerald-400";
+            }
+
+            const historyEl = document.getElementById('move-history');
+            const history = chess.history();
+            if (history.length) {
+                let html = '';
+                for (let i = 0; i < history.length; i += 2) {
+                    const moveNum = Math.floor(i / 2) + 1;
+                    const wMove = history[i];
+                    const bMove = history[i + 1] || '';
+                    html += `
+                        <div class="flex justify-between items-center px-2 py-1 rounded bg-slate-900/50 hover:bg-slate-800/50 text-[11px]">
+                            <span class="text-slate-500 w-8 font-semibold">${moveNum}.</span>
+                            <span class="text-slate-200 font-medium flex-1">${wMove}</span>
+                            <span class="text-slate-400 font-medium flex-1 text-right">${bMove}</span>
+                        </div>
+                    `;
+                }
+                historyEl.innerHTML = html;
+            } else {
+                historyEl.innerHTML = '<div class="text-slate-500 italic text-center py-4">対局開始待ち...</div>';
+            }
+            historyEl.scrollTop = historyEl.scrollHeight;
+        }
+    </script>
+</body>
+</html>
