@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask_login import current_user
 import random
 import string
 
-chess_bp = Blueprint('chess_bp', __name__, template_folder='templates')
+chess_bp = Blueprint('chess_bp', __name__)
 
 # Renderインメモリデータ保持用の辞書
 rooms = {}
@@ -16,10 +17,13 @@ def generate_room_code(length=4):
             return code
 
 def get_current_user_name():
-    """ ログインセッションからユーザー名を取得（設定がなければ仮の名前） """
-    return session.get('user_name') or session.get('username') or session.get('user_id') or cur.execute(username)
+    """ DB / Flask-Login からログインユーザー名を取得 """
+    if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
+        return current_user.username
+    # 未ログインの場合のフォールバック
+    return session.get('user_name') or session.get('username') or 'Guest'
 
-@chess_bp.route('/chess')
+@chess_bp.route('/')
 def index():
     """ ロビー表示（アクティブな3件のルームをランダムに抽出） """
     waiting_rooms = {code: data for code, data in rooms.items() if data['status'] == 'waiting'}
@@ -34,7 +38,7 @@ def index():
 
 @chess_bp.route('/create', methods=['POST'])
 def create_room():
-    """ 新規ルーム作成（セッションから名前を取得） """
+    """ 新規ルーム作成 """
     player_name = get_current_user_name()
     room_code = generate_room_code()
     
@@ -47,14 +51,13 @@ def create_room():
     
     return redirect(url_for('chess_bp.room', room_code=room_code))
 
-@chess_bp.route('/chess/join', methods=['POST'])
+@chess_bp.route('/join', methods=['POST'])
 def join_room():
-    """ コード指定による参加（セッションから名前を取得） """
+    """ コード指定による参加 """
     room_code = request.form.get('room_code', '').strip().upper()
     player_name = get_current_user_name()
     
     if room_code in rooms and rooms[room_code]['status'] == 'waiting':
-        # ホスト自身が再参加した場合でなければゲスト登録
         if rooms[room_code]['host'] != player_name:
             rooms[room_code]['guest'] = player_name
             rooms[room_code]['status'] = 'playing'
@@ -62,7 +65,7 @@ def join_room():
     
     return redirect(url_for('chess_bp.index'))
 
-@chess_bp.route('/chess/room/<room_code>')
+@chess_bp.route('/room/<room_code>')
 def room(room_code):
     """ 対戦画面の表示 """
     if room_code not in rooms:
