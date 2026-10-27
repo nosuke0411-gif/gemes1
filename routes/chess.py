@@ -3,7 +3,7 @@ import string
 from flask import Flask, render_template, jsonify, request, Blueprint
 from flask_login import UserMixin, current_user
 
-app = Flask(__name__, template_folder='.', static_folder='static')
+chess_bp = Blueprint(__name__, template_folder='.', static_folder='static')
 
 # Renderのメモリ上でルームデータを管理（DB不要）
 # 構造: { room_code: { "fen": str, "white_player": str, "black_player": str, "status": str } }
