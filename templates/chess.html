@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- chess.js (公式チェスエンジン・ルール判定) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -17,7 +19,6 @@
             color: #f8fafc;
         }
 
-        /* アスペクト比1:1の正方形チェスボードコンテナ */
         .board-wrapper {
             width: 100%;
             max-width: 480px;
@@ -25,7 +26,6 @@
             margin: 0 auto;
         }
 
-        /* チェスボードグリッド (各マスを完全に等分・正方形化) */
         .board-grid {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
@@ -61,12 +61,10 @@
             color: #f8fafc;
         }
 
-        /* 選択中マスの強調 */
         .square.selected {
             background-color: #f59e0b !important;
         }
 
-        /* 移動可能マス (空マスの場合) */
         .square.valid-move::after {
             content: '';
             position: absolute;
@@ -77,25 +75,21 @@
             box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
         }
 
-        /* 移動可能マス (敵駒が存在する攻撃可能なマス) */
         .square.valid-attack {
             background-color: #ef4444 !important;
         }
 
-        /* 駒の視認性を向上させるスタイリング */
         .piece {
             line-height: 1;
             transition: transform 0.1s ease;
         }
 
-        /* 自分の駒（白駒）: ネオンブルーの発光＋見やすいシャドウ */
         .piece-white {
             color: #ffffff;
             text-shadow: 0 0 6px rgba(56, 189, 248, 0.9), 0 2px 4px rgba(0, 0, 0, 0.8);
             filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
         }
 
-        /* 相手の駒（黒駒）: ダークレッドの発光＋ブラックシャドウ */
         .piece-black {
             color: #1e293b;
             text-shadow: 0 0 6px rgba(244, 63, 94, 0.8), 0 0 2px rgba(255, 255, 255, 0.6);
@@ -133,7 +127,7 @@
                         <i class="fa-solid fa-plus text-amber-500"></i>
                         新しい対戦ルームを作る
                     </h2>
-                    <p class="text-xs text-slate-400 mb-4">作成後は対戦相手が来るまでボット（AI）と練習できます。</p>
+                    <p class="text-xs text-slate-400 mb-4">手番（白/黒）は自動ランダム抽選されます。作成後は対戦相手が来るまでボット（AI）と練習できます。</p>
                     <form action="{{ url_for('chess_bp.create_room') }}" method="POST">
                         <button type="submit" 
                             class="w-full py-3.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 transition duration-200 flex items-center justify-center gap-2">
@@ -205,7 +199,6 @@
 
         <!-- 2. 対戦画面 -->
         <div id="game-view" class="w-full hidden flex-col items-center">
-            <!-- ルームヘッダー情報 -->
             <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-4 flex items-center justify-between shadow-lg">
                 <div>
                     <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">ROOM CODE</span>
@@ -232,7 +225,6 @@
                 <div id="chess-board" class="board-grid"></div>
             </div>
 
-            <!-- アクション・状態表示 -->
             <div class="w-full max-w-md mt-4 flex items-center justify-between">
                 <a href="{{ url_for('chess_bp.index') }}" onclick="leaveCurrentRoom()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition flex items-center gap-2">
                     <i class="fa-solid fa-door-open"></i>
@@ -240,7 +232,7 @@
                 </a>
                 
                 <div class="text-xs text-slate-400">
-                    手番: <span id="turn-indicator" class="font-bold text-amber-400">あなたのターン (白)</span>
+                    手番: <span id="turn-indicator" class="font-bold text-amber-400">ロード中...</span>
                 </div>
             </div>
         </div>
@@ -256,25 +248,16 @@
         const roomData = {% if room_data %}{{ room_data | tojson }}{% else %}null{% endif %};
         const playerName = "{{ player_name if player_name else '' }}";
 
-        // 初期盤面データ
-        let boardState = [
-            ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'],
-            ['♟', '♟', '♟', '♟', '♟', '♟', '♟', '♟'],
-            ['', '', '', '', '', '', '', ''],
-            ['', '', '', '', '', '', '', ''],
-            ['', '', '', '', '', '', '', ''],
-            ['', '', '', '', '', '', '', ''],
-            ['♙', '♙', '♙', '♙', '♙', '♙', '♙', '♙'],
-            ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']
-        ];
-
-        const whitePieces = ['♙', '♖', '♘', '♗', '♕', '♔'];
-        const blackPieces = ['♟', '♜', '♞', '♝', '♛', '♚'];
-
+        let game = new Chess();
+        let playerIsWhite = true;
+        let isBotMode = false;
         let selectedSquare = null;
         let validMoves = [];
-        let isWhiteTurn = true;
-        let isBotMode = false;
+
+        const pieceGlyphs = {
+            'p': '♟', 'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚',
+            'P': '♙', 'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔'
+        };
 
         window.onload = () => {
             if (currentRoomCode && roomData) {
@@ -304,6 +287,13 @@
             document.getElementById('display-room-code').innerText = currentRoomCode;
             document.getElementById('host-name').innerText = roomData.host || 'Host';
             
+            // ホストのランダム割り当てカラーを採用 (ゲストは逆の色)
+            if (roomData.host === playerName) {
+                playerIsWhite = roomData.host_is_white;
+            } else {
+                playerIsWhite = !roomData.host_is_white;
+            }
+
             const badge = document.getElementById('game-status-badge');
             if (roomData.status === 'playing') {
                 isBotMode = false;
@@ -313,265 +303,198 @@
             } else {
                 isBotMode = true;
                 document.getElementById('guest-name').innerText = 'Bot (AI練習中)';
-                badge.innerText = 'ボット練習モード';
+                badge.innerText = 'ボット練習モード (' + (playerIsWhite ? 'あなたは白' : 'あなたは黒') + ')';
                 badge.className = 'px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-xs font-semibold';
             }
 
             renderBoard();
+            updateStatus();
+
+            // もしボットモードで自分が黒番の場合、AIに初手を打たせる
+            if (isBotMode && !playerIsWhite && game.turn() === 'w') {
+                setTimeout(makeBotMove, 700);
+            }
         }
 
         function renderBoard() {
             const boardEl = document.getElementById('chess-board');
             boardEl.innerHTML = '';
 
+            const board = game.board();
+
+            // 自分が黒プレイヤーの場合は盤面を180度反転して表示
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
-                    const isWhiteSquare = (r + c) % 2 === 0;
+                    const actualR = playerIsWhite ? r : (7 - r);
+                    const actualC = playerIsWhite ? c : (7 - c);
+
+                    const isWhiteSquare = (actualR + actualC) % 2 === 0;
                     const square = document.createElement('div');
                     square.className = `square ${isWhiteSquare ? 'white-square' : 'black-square'}`;
-                    
-                    // 選択されたマス
-                    if (selectedSquare && selectedSquare.r === r && selectedSquare.c === c) {
+
+                    const fileChar = String.fromCharCode(97 + actualC);
+                    const rankNum = 8 - actualR;
+                    const squareCoord = fileChar + rankNum;
+
+                    if (selectedSquare === squareCoord) {
                         square.classList.add('selected');
                     }
 
-                    // 移動可能なマス／攻撃可能なマス
-                    const isMoveTarget = validMoves.some(m => m.r === r && m.c === c);
-                    const piece = boardState[r][c];
+                    const targetMove = validMoves.find(m => m.to === squareCoord);
+                    const pieceObj = board[actualR][actualC];
 
-                    if (isMoveTarget) {
-                        if (piece !== '') {
+                    if (targetMove) {
+                        if (pieceObj) {
                             square.classList.add('valid-attack');
                         } else {
                             square.classList.add('valid-move');
                         }
                     }
 
-                    if (piece) {
+                    if (pieceObj) {
                         const pieceEl = document.createElement('span');
-                        const isWhite = whitePieces.includes(piece);
-                        pieceEl.className = `piece ${isWhite ? 'piece-white' : 'piece-black'}`;
-                        pieceEl.innerText = piece;
+                        const isWhitePiece = pieceObj.color === 'w';
+                        pieceEl.className = `piece ${isWhitePiece ? 'piece-white' : 'piece-black'}`;
+                        const symbolKey = isWhitePiece ? pieceObj.type.toUpperCase() : pieceObj.type.toLowerCase();
+                        pieceEl.innerText = pieceGlyphs[symbolKey];
                         square.appendChild(pieceEl);
                     }
 
-                    square.addEventListener('click', () => handleSquareClick(r, c));
+                    square.addEventListener('click', () => handleSquareClick(squareCoord));
                     boardEl.appendChild(square);
                 }
             }
         }
 
-        function handleSquareClick(r, c) {
-            // ボット思考中または自分のターンでない場合は操作無効
-            if (isBotMode && !isWhiteTurn) return;
+        function handleSquareClick(coord) {
+            // ボットモード時、相手のターンのときは操作不可
+            if (isBotMode) {
+                const myTurn = (game.turn() === 'w' && playerIsWhite) || (game.turn() === 'b' && !playerIsWhite);
+                if (!myTurn) return;
+            }
 
-            const piece = boardState[r][c];
-            const isCurrentPieceFriendly = piece && ((isWhiteTurn && whitePieces.includes(piece)) || (!isWhiteTurn && blackPieces.includes(piece)));
+            const piece = game.get(coord);
 
             if (selectedSquare) {
-                // 移動可能マスへのクリックか判定
-                const targetMove = validMoves.find(m => m.r === r && m.c === c);
-
+                const targetMove = validMoves.find(m => m.to === coord);
                 if (targetMove) {
-                    // 駒の移動処理実行
-                    boardState[r][c] = boardState[selectedSquare.r][selectedSquare.c];
-                    boardState[selectedSquare.r][selectedSquare.c] = '';
-
-                    // プロモーション判定 (ポーンが最奥に到達した場合)
-                    if (boardState[r][c] === '♙' && r === 0) boardState[r][c] = '♕';
-                    if (boardState[r][c] === '♟' && r === 7) boardState[r][c] = '♛';
+                    // 移動実行 (プロモーションは常にクイーンに自動昇格)
+                    const moveResult = game.move({
+                        from: selectedSquare,
+                        to: coord,
+                        promotion: 'q'
+                    });
 
                     selectedSquare = null;
                     validMoves = [];
-                    isWhiteTurn = !isWhiteTurn;
-                    updateTurnStatus();
                     renderBoard();
+                    updateStatus();
 
-                    // ボット練習モードの場合、ボット着手を実行
-                    if (isBotMode && !isWhiteTurn) {
-                        setTimeout(makeBotMove, 700);
+                    if (game.game_over()) {
+                        handleGameOver();
+                        return;
+                    }
+
+                    if (isBotMode && !game.game_over()) {
+                        const myTurnNow = (game.turn() === 'w' && playerIsWhite) || (game.turn() === 'b' && !playerIsWhite);
+                        if (!myTurnNow) {
+                            setTimeout(makeBotMove, 700);
+                        }
                     }
                     return;
                 }
 
                 // 自分の別の駒を選択し直した場合
-                if (isCurrentPieceFriendly) {
-                    selectedSquare = { r, c };
-                    validMoves = calculateValidMoves(r, c);
+                if (piece && piece.color === game.turn()) {
+                    selectedSquare = coord;
+                    validMoves = game.moves({ square: coord, verbose: true });
                 } else {
                     selectedSquare = null;
                     validMoves = [];
                 }
             } else {
-                // 駒の選択 (ターンの色に適合する駒のみ)
-                if (isCurrentPieceFriendly) {
-                    selectedSquare = { r, c };
-                    validMoves = calculateValidMoves(r, c);
+                if (piece && piece.color === game.turn()) {
+                    // 自分の色の駒のみ選択可能
+                    const isMyPieceColor = (piece.color === 'w' && playerIsWhite) || (piece.color === 'b' && !playerIsWhite);
+                    if (isBotMode || isMyPieceColor) {
+                        selectedSquare = coord;
+                        validMoves = game.moves({ square: coord, verbose: true });
+                    }
                 }
             }
             renderBoard();
         }
 
-        // --- チェスの移動ルール計算エンジン ---
-        function calculateValidMoves(r, c) {
-            const piece = boardState[r][c];
-            if (!piece) return [];
-
-            const moves = [];
-            const isWhite = whitePieces.includes(piece);
-            const myPieces = isWhite ? whitePieces : blackPieces;
-            const enemyPieces = isWhite ? blackPieces : whitePieces;
-
-            // 直線方向の移動計算ヘルパー (ルーク・ビショップ・クイーン用)
-            const addRayMoves = (directions) => {
-                directions.forEach(([dr, dc]) => {
-                    let nr = r + dr;
-                    let nc = c + dc;
-                    while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                        const targetPiece = boardState[nr][nc];
-                        if (targetPiece === '') {
-                            moves.push({ r: nr, c: nc });
-                        } else if (enemyPieces.includes(targetPiece)) {
-                            moves.push({ r: nr, c: nc });
-                            break;
-                        } else {
-                            break; // 自分の駒で遮られる
-                        }
-                        nr += dr;
-                        nc += dc;
-                    }
-                });
-            };
-
-            switch (piece) {
-                case '♙': // 白ポーン (上へ進む)
-                    if (r - 1 >= 0 && boardState[r - 1][c] === '') {
-                        moves.push({ r: r - 1, c: c });
-                        if (r === 6 && boardState[r - 2][c] === '') { // 初手2マス移動
-                            moves.push({ r: r - 2, c: c });
-                        }
-                    }
-                    // 斜め前の攻撃
-                    [[r - 1, c - 1], [r - 1, c + 1]].forEach(([nr, nc]) => {
-                        if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                            if (enemyPieces.includes(boardState[nr][nc])) {
-                                moves.push({ r: nr, c: nc });
-                            }
-                        }
-                    });
-                    break;
-
-                case '♟': // 黒ポーン (下へ進む)
-                    if (r + 1 < 8 && boardState[r + 1][c] === '') {
-                        moves.push({ r: r + 1, c: c });
-                        if (r === 1 && boardState[r + 2][c] === '') { // 初手2マス移動
-                            moves.push({ r: r + 2, c: c });
-                        }
-                    }
-                    // 斜め前の攻撃
-                    [[r + 1, c - 1], [r + 1, c + 1]].forEach(([nr, nc]) => {
-                        if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                            if (enemyPieces.includes(boardState[nr][nc])) {
-                                moves.push({ r: nr, c: nc });
-                            }
-                        }
-                    });
-                    break;
-
-                case '♖': case '♜': // ルーク (十字方向)
-                    addRayMoves([[1, 0], [-1, 0], [0, 1], [0, -1]]);
-                    break;
-
-                case '♘': case '♞': // ナイト (八方向ジャンプ)
-                    const knightOffsets = [
-                        [-2, -1], [-2, 1], [-1, -2], [-1, 2],
-                        [1, -2], [1, 2], [2, -1], [2, 1]
-                    ];
-                    knightOffsets.forEach(([dr, dc]) => {
-                        const nr = r + dr, nc = c + dc;
-                        if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                            if (!myPieces.includes(boardState[nr][nc])) {
-                                moves.push({ r: nr, c: nc });
-                            }
-                        }
-                    });
-                    break;
-
-                case '♗': case '♝': // ビショップ (斜め方向)
-                    addRayMoves([[1, 1], [1, -1], [-1, 1], [-1, -1]]);
-                    break;
-
-                case '♕': case '♛': // クイーン (全方向)
-                    addRayMoves([
-                        [1, 0], [-1, 0], [0, 1], [0, -1],
-                        [1, 1], [1, -1], [-1, 1], [-1, -1]
-                    ]);
-                    break;
-
-                case '♔': case '♚': // キング (周囲1マス)
-                    const kingOffsets = [
-                        [1, 0], [-1, 0], [0, 1], [0, -1],
-                        [1, 1], [1, -1], [-1, 1], [-1, -1]
-                    ];
-                    kingOffsets.forEach(([dr, dc]) => {
-                        const nr = r + dr, nc = c + dc;
-                        if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-                            if (!myPieces.includes(boardState[nr][nc])) {
-                                moves.push({ r: nr, c: nc });
-                            }
-                        }
-                    });
-                    break;
-            }
-
-            return moves;
-        }
-
-        // ボット（AI）の自動思考・合法手着手処理
         function makeBotMove() {
-            if (!isBotMode || isWhiteTurn) return;
+            if (!isBotMode || game.game_over()) return;
 
-            let allBotMoves = [];
-            for (let r = 0; r < 8; r++) {
-                for (let c = 0; c < 8; c++) {
-                    if (blackPieces.includes(boardState[r][c])) {
-                        const moves = calculateValidMoves(r, c);
-                        moves.forEach(m => {
-                            allBotMoves.push({ from: { r, c }, to: m });
-                        });
-                    }
-                }
-            }
+            const possibleMoves = game.moves({ verbose: true });
+            if (possibleMoves.length === 0) return;
 
-            if (allBotMoves.length > 0) {
-                // 攻撃できる手があれば優先的に選択
-                const attackMoves = allBotMoves.filter(m => whitePieces.includes(boardState[m.to.r][m.to.c]));
-                const chosenMove = attackMoves.length > 0 
-                    ? attackMoves[Math.floor(Math.random() * attackMoves.length)]
-                    : allBotMoves[Math.floor(Math.random() * allBotMoves.length)];
+            // 攻撃できる手があれば優先的に選択
+            const captureMoves = possibleMoves.filter(m => m.captured);
+            const chosenMove = captureMoves.length > 0 
+                ? captureMoves[Math.floor(Math.random() * captureMoves.length)]
+                : possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
 
-                boardState[chosenMove.to.r][chosenMove.to.c] = boardState[chosenMove.from.r][chosenMove.from.c];
-                boardState[chosenMove.from.r][chosenMove.from.c] = '';
-
-                // ポーンの成処理
-                if (boardState[chosenMove.to.r][chosenMove.to.c] === '♟' && chosenMove.to.r === 7) {
-                    boardState[chosenMove.to.r][chosenMove.to.c] = '♛';
-                }
-            }
-
-            isWhiteTurn = true;
-            updateTurnStatus();
+            game.move(chosenMove);
             renderBoard();
+            updateStatus();
+
+            if (game.game_over()) {
+                handleGameOver();
+            }
         }
 
-        function updateTurnStatus() {
+        function updateStatus() {
             const indicator = document.getElementById('turn-indicator');
-            if (isWhiteTurn) {
-                indicator.innerText = "あなたのターン (白)";
-                indicator.className = "font-bold text-amber-400";
+            if (game.game_over()) {
+                if (game.in_checkmate()) {
+                    indicator.innerText = "ゲーム終了：チェックメイト！";
+                } else {
+                    indicator.innerText = "ゲーム終了：引き分け (ドロー)";
+                }
+                indicator.className = "font-bold text-red-400";
+                return;
+            }
+
+            const turnColor = game.turn() === 'w' ? '白' : '黒';
+            const isMyTurn = (game.turn() === 'w' && playerIsWhite) || (game.turn() === 'b' && !playerIsWhite);
+
+            if (isBotMode) {
+                indicator.innerText = isMyTurn ? `あなたのターン (${turnColor})` : `ボット思考中... (${turnColor})`;
             } else {
-                indicator.innerText = isBotMode ? "ボット思考中... (黒)" : "相手のターン (黒)";
-                indicator.className = "font-bold text-slate-400";
+                indicator.innerText = isMyTurn ? `あなたのターン (${turnColor})` : `相手のターン (${turnColor})`;
+            }
+            indicator.className = "font-bold text-amber-400";
+        }
+
+        function handleGameOver() {
+            let message = "ゲームが終了しました。";
+            if (game.in_checkmate()) {
+                const winnerColor = game.turn() === 'w' ? '黒' : '白';
+                message = `チェックメイト！ ${winnerColor}の勝利です！`;
+            } else if (game.in_draw()) {
+                message = "引き分け（ドロー）となりました。";
+            }
+            alert(message);
+
+            // AIモードの場合、勝敗が確定したら1.5秒後に自動リセット＆カラー再抽選で再スタート
+            if (isBotMode) {
+                setTimeout(() => {
+                    game.reset();
+                    playerIsWhite = Math.random() < 0.5;
+                    const badge = document.getElementById('game-status-badge');
+                    badge.innerText = 'ボット練習モード (' + (playerIsWhite ? 'あなたは白' : 'あなたは黒') + ')';
+                    selectedSquare = null;
+                    validMoves = [];
+                    renderBoard();
+                    updateStatus();
+
+                    if (!playerIsWhite && game.turn() === 'w') {
+                        setTimeout(makeBotMove, 700);
+                    }
+                }, 1500);
             }
         }
 
