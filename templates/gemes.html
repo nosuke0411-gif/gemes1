@@ -479,8 +479,8 @@
     <header class="hud-bar">
         <div class="chip-badge" title="保有コイン">
             <div class="chip-icon">$</div>
-            <!-- Flask / Jinja2 変数対応 -->
-            <span>{{ current_user.coins if current_user is defined and current_user.coins is defined else '1,250' }} G</span>
+            <!-- Flask / Jinja2 変数対応（安全なプロパティ参照） -->
+            <span>{{ current_user.coins if current_user is defined and current_user and current_user.coins is defined else '1,250' }} G</span>
         </div>
 
         <div class="title-bar">GAME SELECTION</div>
@@ -546,7 +546,7 @@
             <a href="/ranking" class="card-btn">
                 <div class="card-corner top-left gold-suit">
                     <div>K</div>
-                    <div>👑</div>
+                    <div>♠</div>
                 </div>
                 <div class="card-center">
                     <div class="card-icon gold-suit">
@@ -559,7 +559,7 @@
                 </div>
                 <div class="card-corner bottom-right gold-suit">
                     <div>K</div>
-                    <div>👑</div>
+                    <div>♠</div>
                 </div>
             </a>
 
@@ -605,8 +605,8 @@
                 </div>
             </a>
 
-            <!-- 復活ゲー (Hearts Ace - Jinja2条件分岐対応) -->
-            {% if current_user is defined and current_user.coins == 0 %}
+            <!-- 復活ゲー (Hearts Ace - Jinja2安全保護対応) -->
+            {% if current_user is defined and current_user and current_user.coins == 0 %}
             <a href="/revive_game" class="card-btn">
                 <span class="card-badge">CHANCE!</span>
                 <div class="card-corner top-left red-suit">
@@ -629,7 +629,7 @@
             </a>
             {% endif %}
 
-            <!-- チェス (Knight/Chess Piece) -->
+            <!-- チェス (Knight) -->
             <a href="/chess" class="card-btn">
                 <div class="card-corner top-left black-suit">
                     <div>N</div>
