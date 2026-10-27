@@ -19,7 +19,7 @@ def get_current_user_name():
     """ ログインセッションからユーザー名を取得（設定がなければ仮の名前） """
     return session.get('user_name') or session.get('username') or session.get('user_id') or 'Player'
 
-@chess_bp.route('/')
+@chess_bp.route('/chess')
 def index():
     """ ロビー表示（アクティブな3件のルームをランダムに抽出） """
     waiting_rooms = {code: data for code, data in rooms.items() if data['status'] == 'waiting'}
@@ -47,7 +47,7 @@ def create_room():
     
     return redirect(url_for('chess_bp.room', room_code=room_code))
 
-@chess_bp.route('/join', methods=['POST'])
+@chess_bp.route('/chess/join', methods=['POST'])
 def join_room():
     """ コード指定による参加（セッションから名前を取得） """
     room_code = request.form.get('room_code', '').strip().upper()
@@ -62,7 +62,7 @@ def join_room():
     
     return redirect(url_for('chess_bp.index'))
 
-@chess_bp.route('/room/<room_code>')
+@chess_bp.route('/chess/room/<room_code>')
 def room(room_code):
     """ 対戦画面の表示 """
     if room_code not in rooms:
