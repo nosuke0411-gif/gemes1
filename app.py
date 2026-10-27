@@ -31,7 +31,7 @@ app.register_blueprint(blackjack_bp)
 app.register_blueprint(revive_bp)
 app.register_blueprint(ranking_bp)
 app.register_blueprint(transfer_bp)
-app.register_blueprint(chess_bp)
+app.register_blueprint(chess_bp, url_prefix='/chess')
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000, debug=True)
