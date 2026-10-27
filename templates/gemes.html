@@ -51,7 +51,6 @@
         overflow: hidden;
     }
 
-    /* フェルト生地の質感を模した微細なパターンオーバーレイ */
     .table-container::before {
         content: '';
         position: absolute;
@@ -65,7 +64,6 @@
         z-index: 1;
     }
 
-    /* テーブル上の楕円ライン（カジノテーブル装飾線） */
     .table-line {
         position: absolute;
         top: 50%;
@@ -95,7 +93,6 @@
         backdrop-filter: blur(8px);
     }
 
-    /* チップ / コインバッジ */
     .chip-badge {
         display: flex;
         align-items: center;
@@ -170,7 +167,6 @@
         fill: currentColor;
     }
 
-    /* テーブル中央のカードエリア */
     .game-scroll-wrapper {
         position: relative;
         z-index: 10;
@@ -201,7 +197,6 @@
         border-radius: 4px;
     }
 
-    /* リアルなトランプカード */
     .card-btn {
         flex: 0 0 auto;
         width: 200px;
@@ -224,7 +219,6 @@
         cursor: pointer;
     }
 
-    /* カードの二重フレーム枠 */
     .card-btn::after {
         content: '';
         position: absolute;
@@ -237,14 +231,12 @@
         pointer-events: none;
     }
 
-    /* カードホバー時の立体浮き上がりエフェクト */
     .card-btn:hover {
         transform: translateY(-18px) rotateX(8deg) scale(1.05);
         box-shadow: 0 25px 35px rgba(0, 0, 0, 0.6), 0 0 15px rgba(243, 195, 80, 0.4);
         border-color: var(--gold-primary);
     }
 
-    /* カードの角マーク */
     .card-corner {
         position: absolute;
         display: flex;
@@ -267,13 +259,11 @@
         transform: rotate(180deg);
     }
 
-    /* スートカラー */
     .red-suit { color: #d32f2f; }
     .black-suit { color: #212121; }
     .gold-suit { color: #b8860b; }
     .green-suit { color: #2e7d32; }
 
-    /* 中央のメインコンテンツ・イラスト */
     .card-center {
         display: flex;
         flex-direction: column;
@@ -315,7 +305,6 @@
         text-transform: uppercase;
     }
 
-    /* 復活ゲーリボンラベル */
     .card-badge {
         position: absolute;
         top: 14px;
@@ -331,7 +320,6 @@
         border: 1px dashed var(--gold-light);
     }
 
-    /* スクロール矢印ボタン */
     .scroll-arrow {
         position: absolute;
         top: 50%;
@@ -360,7 +348,6 @@
     .scroll-arrow.left { left: 4px; }
     .scroll-arrow.right { right: 4px; }
 
-    /* ポップアップ（カジノウッド枠） */
     .popup {
         position: fixed;
         top: 0;
@@ -458,7 +445,6 @@
         border-color: #ff6666;
     }
 
-    /* フッター */
     .footer-status {
         position: relative;
         z-index: 10;
@@ -479,14 +465,12 @@
     <header class="hud-bar">
         <div class="chip-badge" title="保有コイン">
             <div class="chip-icon">$</div>
-            <!-- Flask / Jinja2 変数対応 -->
-            <span>{{ current_user.coins if current_user is defined and current_user.coins is defined else '1,250' }} G</span>
+            <span>{% if current_user is defined and current_user and current_user.coins is defined %}{{ current_user.coins }}{% else %}1,250{% endif %} G</span>
         </div>
 
         <div class="title-bar">GAME SELECTION</div>
 
         <div class="top-controls">
-            <!-- 設定ボタン -->
             <button class="icon-btn" id="settings-btn" title="設定">
                 <svg viewBox="0 0 24 24">
                     <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
@@ -513,7 +497,7 @@
                         </svg>
                     </div>
                     <div class="card-title">ハイロー</div>
-                    <div class="card-subtitle">HIGH & LOW</div>
+                    <div class="card-subtitle">HIGH &amp; LOW</div>
                 </div>
                 <div class="card-corner bottom-right black-suit">
                     <div>A</div>
@@ -546,7 +530,7 @@
             <a href="/ranking" class="card-btn">
                 <div class="card-corner top-left gold-suit">
                     <div>K</div>
-                    <div>👑</div>
+                    <div>♠</div>
                 </div>
                 <div class="card-center">
                     <div class="card-icon gold-suit">
@@ -559,7 +543,7 @@
                 </div>
                 <div class="card-corner bottom-right gold-suit">
                     <div>K</div>
-                    <div>👑</div>
+                    <div>♠</div>
                 </div>
             </a>
 
@@ -605,8 +589,8 @@
                 </div>
             </a>
 
-            <!-- 復活ゲー (Hearts Ace - Jinja2条件分岐対応) -->
-            {% if current_user is defined and current_user.coins == 0 %}
+            <!-- 復活ゲー (Hearts Ace) -->
+            {% if current_user is defined and current_user and current_user.coins is defined and current_user.coins == 0 %}
             <a href="/revive_game" class="card-btn">
                 <span class="card-badge">CHANCE!</span>
                 <div class="card-corner top-left red-suit">
@@ -628,6 +612,27 @@
                 </div>
             </a>
             {% endif %}
+
+            <!-- チェス (Knight) -->
+            <a href="/chess" class="card-btn">
+                <div class="card-corner top-left black-suit">
+                    <div>N</div>
+                    <div>♠</div>
+                </div>
+                <div class="card-center">
+                    <div class="card-icon black-suit">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 22H5v-2h14v2zm-1-3H6v-2h12v2zm-1.8-7.8l1.4-1.4C18.3 8.1 18 5.6 16.2 4.2 14.4 2.8 11.8 3 10.2 4.5l-1.4 1.4 1.4 1.4c.8-.8 2-1 3-.5l-3.2 3.2-1.4-1.4-1.4 1.4 2.1 2.1c-.5.9-.3 2.1.5 2.9l1.4 1.4c1.2 1.2 3.1 1.2 4.2 0l4.2-4.2c1.2-1.2 1.2-3.1 0-4.3z"/>
+                        </svg>
+                    </div>
+                    <div class="card-title">チェス</div>
+                    <div class="card-subtitle">CHESS</div>
+                </div>
+                <div class="card-corner bottom-right black-suit">
+                    <div>N</div>
+                    <div>♠</div>
+                </div>
+            </a>
 
         </div>
         <button class="scroll-arrow right" id="scroll-right">&gt;</button>
@@ -655,29 +660,39 @@ const settingsBtn = document.getElementById("settings-btn");
 const settingsPopup = document.getElementById("settings-popup");
 const closeBtn = document.querySelector(".close-btn");
 
-settingsBtn.onclick = () => {
-    settingsPopup.classList.remove("hidden");
-};
+if (settingsBtn && settingsPopup && closeBtn) {
+    settingsBtn.onclick = () => {
+        settingsPopup.classList.remove("hidden");
+    };
 
-closeBtn.onclick = () => {
-    settingsPopup.classList.add("hidden");
-};
-
-settingsPopup.onclick = (e) => {
-    if (e.target === settingsPopup) {
+    closeBtn.onclick = () => {
         settingsPopup.classList.add("hidden");
-    }
-};
+    };
+
+    settingsPopup.onclick = (e) => {
+        if (e.target === settingsPopup) {
+            settingsPopup.classList.add("hidden");
+        }
+    };
+}
 
 // --- 横スクロール矢印ボタン ---
 const gameScroll = document.getElementById("game-scroll");
-document.getElementById("scroll-left").onclick = () => {
-    gameScroll.scrollBy({ left: -220, behavior: 'smooth' });
-};
-document.getElementById("scroll-right").onclick = () => {
-    gameScroll.scrollBy({ left: 220, behavior: 'smooth' });
-};
+const btnLeft = document.getElementById("scroll-left");
+const btnRight = document.getElementById("scroll-right");
+
+if (gameScroll && btnLeft && btnRight) {
+    btnLeft.onclick = () => {
+        gameScroll.scrollBy({ left: -220, behavior: 'smooth' });
+    };
+    btnRight.onclick = () => {
+        gameScroll.scrollBy({ left: 220, behavior: 'smooth' });
+    };
+}
 </script>
 
 </body>
 </html>
+```
+
+もしこれに差し替えても依然としてRender側で500エラーが出る場合は、Renderのログ（`Exception on /games [GET]` の直下に表示されるスタックトレースの詳細）を確認してください。`app.py` 側（Python）の `/games` ルートで例外が発生している可能性があります。
