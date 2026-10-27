@@ -479,8 +479,8 @@
     <header class="hud-bar">
         <div class="chip-badge" title="保有コイン">
             <div class="chip-icon">$</div>
-            <!-- Flask / Jinja2 変数対応（安全なプロパティ参照） -->
-            <span>{{ current_user.coins if current_user is defined and current_user and current_user.coins is defined else '1,250' }} G</span>
+            <!-- Flask / Jinja2 変数対応 -->
+            <span>{{ current_user.coins if current_user is defined and current_user.coins is defined else '1,250' }} G</span>
         </div>
 
         <div class="title-bar">GAME SELECTION</div>
@@ -513,7 +513,7 @@
                         </svg>
                     </div>
                     <div class="card-title">ハイロー</div>
-                    <div class="card-subtitle">HIGH &amp; LOW</div>
+                    <div class="card-subtitle">HIGH & LOW</div>
                 </div>
                 <div class="card-corner bottom-right black-suit">
                     <div>A</div>
@@ -546,7 +546,7 @@
             <a href="/ranking" class="card-btn">
                 <div class="card-corner top-left gold-suit">
                     <div>K</div>
-                    <div>♠</div>
+                    <div>👑</div>
                 </div>
                 <div class="card-center">
                     <div class="card-icon gold-suit">
@@ -559,7 +559,7 @@
                 </div>
                 <div class="card-corner bottom-right gold-suit">
                     <div>K</div>
-                    <div>♠</div>
+                    <div>👑</div>
                 </div>
             </a>
 
@@ -605,8 +605,8 @@
                 </div>
             </a>
 
-            <!-- 復活ゲー (Hearts Ace - Jinja2安全保護対応) -->
-            {% if current_user is defined and current_user and current_user.coins == 0 %}
+            <!-- 復活ゲー (Hearts Ace - Jinja2条件分岐対応) -->
+            {% if current_user is defined and current_user.coins == 0 %}
             <a href="/revive_game" class="card-btn">
                 <span class="card-badge">CHANCE!</span>
                 <div class="card-corner top-left red-suit">
@@ -628,27 +628,6 @@
                 </div>
             </a>
             {% endif %}
-
-            <!-- チェス (Knight) -->
-            <a href="/chess" class="card-btn">
-                <div class="card-corner top-left black-suit">
-                    <div>N</div>
-                    <div>♠</div>
-                </div>
-                <div class="card-center">
-                    <div class="card-icon black-suit">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M19 22H5v-2h14v2zm-1-3H6v-2h12v2zm-1.8-7.8l1.4-1.4C18.3 8.1 18 5.6 16.2 4.2 14.4 2.8 11.8 3 10.2 4.5l-1.4 1.4 1.4 1.4c.8-.8 2-1 3-.5l-3.2 3.2-1.4-1.4-1.4 1.4 2.1 2.1c-.5.9-.3 2.1.5 2.9l1.4 1.4c1.2 1.2 3.1 1.2 4.2 0l4.2-4.2c1.2-1.2 1.2-3.1 0-4.3z"/>
-                        </svg>
-                    </div>
-                    <div class="card-title">チェス</div>
-                    <div class="card-subtitle">CHESS</div>
-                </div>
-                <div class="card-corner bottom-right black-suit">
-                    <div>N</div>
-                    <div>♠</div>
-                </div>
-            </a>
 
         </div>
         <button class="scroll-arrow right" id="scroll-right">&gt;</button>
