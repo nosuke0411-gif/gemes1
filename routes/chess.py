@@ -15,11 +15,11 @@ def generate_room_code():
         if code not in ROOMS:
             return code
 
-@app.route('/chess')
+@chess_bp.route('/chess')
 def chess_page():
     return render_template('chess.html')
 
-@app.route('/api/chess/get_rooms', methods=['GET'])
+@chess_bp.route('/api/chess/get_rooms', methods=['GET'])
 def get_rooms():
     """現在存在するルームの一覧を返すAPI"""
     room_list = []
@@ -32,7 +32,7 @@ def get_rooms():
         })
     return jsonify({"success": True, "rooms": room_list})
 
-@app.route('/api/chess/create_room', methods=['POST'])
+@chess_bp.route('/api/chess/create_room', methods=['POST'])
 def create_room():
     """新規ルーム作成API"""
     code = generate_room_code()
@@ -55,7 +55,7 @@ def create_room():
         "color": "w"
     })
 
-@app.route('/api/chess/join_room', methods=['POST'])
+@chess_bp.route('/api/chess/join_room', methods=['POST'])
 def join_room():
     """ルーム参加API"""
     data = request.get_json() or {}
@@ -90,7 +90,7 @@ def join_room():
         "status": room["status"]
     })
 
-@app.route('/api/chess/get_state', methods=['GET'])
+@chess_bp.route('/api/chess/get_state', methods=['GET'])
 def get_state():
     """対局の最新状態取得（ポーリング用API）"""
     code = request.args.get('room_code', '').upper()
@@ -106,7 +106,7 @@ def get_state():
         "status": room["status"]
     })
 
-@app.route('/api/chess/make_move', methods=['POST'])
+@chess_bp.route('/api/chess/make_move', methods=['POST'])
 def make_move():
     """手番の更新API"""
     data = request.get_json() or {}
