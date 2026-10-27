@@ -20,7 +20,6 @@ def get_current_user_name():
     """ DB / Flask-Login からログインユーザー名を取得 """
     if hasattr(current_user, 'is_authenticated') and current_user.is_authenticated:
         return current_user.username
-    # 未ログインの場合のフォールバック
     return session.get('user_name') or session.get('username') or 'Guest'
 
 @chess_bp.route('')
@@ -39,15 +38,17 @@ def index():
 
 @chess_bp.route('/create', methods=['POST'])
 def create_room():
-    """ 新規ルーム作成 """
+    """ 新規ルーム作成時にホストの色をランダムに決定 (True=白, False=黒) """
     player_name = get_current_user_name()
     room_code = generate_room_code()
+    
+    host_is_white = random.choice([True, False])
     
     rooms[room_code] = {
         'host': player_name,
         'guest': None,
         'status': 'waiting',
-        'fen': 'start'
+        'host_is_white': host_is_white
     }
     
     return redirect(url_for('chess_bp.room', room_code=room_code))
@@ -84,7 +85,6 @@ def leave_room(room_code):
     
     if room_code in rooms:
         room_data = rooms[room_code]
-        # ホストかつ待機中の場合はルームを破棄
         if room_data['host'] == player_name and room_data['status'] == 'waiting':
             rooms.pop(room_code, None)
     
