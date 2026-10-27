@@ -1,124 +1,74 @@
+from flask import Blueprint, render_template, request, redirect, url_for, session
 import random
 import string
-from flask import Flask, render_template, jsonify, request, Blueprint
-from flask_login import UserMixin, current_user
 
-chess_bp = Blueprint('chess', __name__, template_folder='.', static_folder='static')
+chess_bp = Blueprint('chess_bp', __name__, template_folder='templates')
 
-# Renderのメモリ上でルームデータを管理（DB不要）
-# 構造: { room_code: { "fen": str, "white_player": str, "black_player": str, "status": str } }
-ROOMS = {}
+# Renderインメモリデータ保持用の辞書
+rooms = {}
 
-def generate_room_code():
+def generate_room_code(length=4):
+    """ 4桁のアルファベット+数字コード生成 """
+    chars = string.ascii_uppercase + string.digits
     while True:
-        code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-        if code not in ROOMS:
+        code = ''.join(random.choices(chars, k=length))
+        if code not in rooms:
             return code
 
-@chess_bp.route('/chess')
-def chess_page():
-    return render_template('chess.html')
+def get_current_user_name():
+    """ ログインセッションからユーザー名を取得（設定がなければ仮の名前） """
+    return session.get('user_name') or session.get('username') or session.get('user_id') or 'Player'
 
-@chess_bp.route('/api/chess/get_rooms', methods=['GET'])
-def get_rooms():
-    """現在存在するルームの一覧を返すAPI"""
-    room_list = []
-    for code, room in ROOMS.items():
-        room_list.append({
-            "room_code": code,
-            "white_player": room["white_player"],
-            "black_player": room["black_player"],
-            "status": room["status"]
-        })
-    return jsonify({"success": True, "rooms": room_list})
+@chess_bp.route('/')
+def index():
+    """ ロビー表示（アクティブな3件のルームをランダムに抽出） """
+    waiting_rooms = {code: data for code, data in rooms.items() if data['status'] == 'waiting'}
+    active_codes = list(waiting_rooms.keys())
+    random.shuffle(active_codes)
+    selected_codes = active_codes[:3]
+    
+    random_rooms = {code: waiting_rooms[code] for code in selected_codes}
+    player_name = get_current_user_name()
+    
+    return render_template('chess.html', rooms=random_rooms, room_code=None, room_data=None, player_name=player_name)
 
-@chess_bp.route('/api/chess/create_room', methods=['POST'])
+@chess_bp.route('/create', methods=['POST'])
 def create_room():
-    """新規ルーム作成API"""
-    code = generate_room_code()
-    initial_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    """ 新規ルーム作成（セッションから名前を取得） """
+    player_name = get_current_user_name()
+    room_code = generate_room_code()
     
-    # current_userからユーザー名を取得（未ログイン時はゲスト名）
-    player_id = getattr(current_user, 'username', f"Guest_{code}")
-    
-    ROOMS[code] = {
-        "fen": initial_fen,
-        "white_player": player_id,
-        "black_player": None,
-        "status": "waiting"
+    rooms[room_code] = {
+        'host': player_name,
+        'guest': None,
+        'status': 'waiting',
+        'fen': 'start'
     }
     
-    return jsonify({
-        "success": True,
-        "room_code": code,
-        "player_id": player_id,
-        "color": "w"
-    })
+    return redirect(url_for('chess_bp.room', room_code=room_code))
 
-@chess_bp.route('/api/chess/join_room', methods=['POST'])
+@chess_bp.route('/join', methods=['POST'])
 def join_room():
-    """ルーム参加API"""
-    data = request.get_json() or {}
-    code = data.get('room_code', '').upper()
-    player_id = getattr(current_user, 'username', f"Guest_{code}")
-
-    if code not in ROOMS:
-        return jsonify({"success": False, "error": "指定されたルームが見つかりません"}), 404
-
-    room = ROOMS[code]
-    color = 'spectator'
-
-    if room["white_player"] == player_id:
-        color = 'w'
-    elif room["black_player"] == player_id:
-        color = 'b'
-    elif not room["white_player"]:
-        room["white_player"] = player_id
-        color = 'w'
-    elif not room["black_player"]:
-        room["black_player"] = player_id
-        room["status"] = 'active'
-        color = 'b'
-
-    return jsonify({
-        "success": True,
-        "room_code": code,
-        "fen": room["fen"],
-        "color": color,
-        "white_player": room["white_player"],
-        "black_player": room["black_player"],
-        "status": room["status"]
-    })
-
-@chess_bp.route('/api/chess/get_state', methods=['GET'])
-def get_state():
-    """対局の最新状態取得（ポーリング用API）"""
-    code = request.args.get('room_code', '').upper()
-    if code not in ROOMS:
-        return jsonify({"success": False, "error": "ルームが存在しません"}), 404
+    """ コード指定による参加（セッションから名前を取得） """
+    room_code = request.form.get('room_code', '').strip().upper()
+    player_name = get_current_user_name()
     
-    room = ROOMS[code]
-    return jsonify({
-        "success": True,
-        "fen": room["fen"],
-        "white_player": room["white_player"],
-        "black_player": room["black_player"],
-        "status": room["status"]
-    })
+    if room_code in rooms and rooms[room_code]['status'] == 'waiting':
+        # ホスト自身が再参加した場合でなければゲスト登録
+        if rooms[room_code]['host'] != player_name:
+            rooms[room_code]['guest'] = player_name
+            rooms[room_code]['status'] = 'playing'
+        return redirect(url_for('chess_bp.room', room_code=room_code))
+    
+    return redirect(url_for('chess_bp.index'))
 
-@chess_bp.route('/api/chess/make_move', methods=['POST'])
-def make_move():
-    """手番の更新API"""
-    data = request.get_json() or {}
-    code = data.get('room_code', '').upper()
-    new_fen = data.get('fen')
-
-    if code not in ROOMS:
-        return jsonify({"success": False, "error": "ルームが存在しません"}), 404
-
-    ROOMS[code]["fen"] = new_fen
-    return jsonify({"success": True})
-
-@chess_bp.route('/api/health', methods=['GET'])
-def health_check():
-    return jsonify({"status": "ok", "message": "Render Memory Chess Server is running"})
+@chess_bp.route('/room/<room_code>')
+def room(room_code):
+    """ 対戦画面の表示 """
+    if room_code not in rooms:
+        return redirect(url_for('chess_bp.index'))
+    
+    player_name = get_current_user_name()
+    room_data = rooms[room_code]
+    
+    return render_template('chess.html', rooms={}, room_code=room_code, room_data=room_data, player_name=player_name)
