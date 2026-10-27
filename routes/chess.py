@@ -23,6 +23,7 @@ def get_current_user_name():
     # 未ログインの場合のフォールバック
     return session.get('user_name') or session.get('username') or 'Guest'
 
+@chess_bp.route('')
 @chess_bp.route('/')
 def index():
     """ ロビー表示（アクティブな3件のルームをランダムに抽出） """
@@ -87,7 +88,6 @@ def leave_room(room_code):
         if room_data['host'] == player_name and room_data['status'] == 'waiting':
             rooms.pop(room_code, None)
     
-    # SendBeaconなどのAPIリクエストの場合はJSONレスポンス
     if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.method == 'POST':
         return jsonify({'status': 'success', 'message': 'Room left/deleted'})
     
