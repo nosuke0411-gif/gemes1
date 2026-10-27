@@ -17,7 +17,7 @@ def generate_room_code(length=4):
 
 def get_current_user_name():
     """ ログインセッションからユーザー名を取得（設定がなければ仮の名前） """
-    return session.get('user_name') or session.get('username') or session.get('user_id') or 'Player'
+    return session.get('user_name') or session.get('username') or session.get('user_id') or cur.execute(username)
 
 @chess_bp.route('/chess')
 def index():
