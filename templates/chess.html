@@ -166,33 +166,38 @@
                             <i class="fa-solid fa-shuffle text-indigo-400"></i>
                             対戦可能ルーム (ランダム3件)
                         </h2>
-                        <span class="text-xs bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-500/30">Active</span>
+                        <button onclick="refreshActiveRooms()" title="リストを更新" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+                            <i id="refresh-icon" class="fa-solid fa-rotate"></i>
+                            <span>更新</span>
+                        </button>
                     </div>
 
-                    {% if rooms and rooms|length > 0 %}
-                        <div class="space-y-3">
-                            {% for code, data in rooms.items() %}
-                            <div class="p-4 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between hover:border-slate-700 transition">
-                                <div>
-                                    <div class="text-sm font-semibold text-slate-200">{{ data.host }} のルーム</div>
-                                    <div class="text-xs text-slate-400 mt-0.5 font-mono">CODE: <span class="text-amber-400 font-bold">{{ code }}</span></div>
+                    <div id="active-rooms-container">
+                        {% if rooms and rooms|length > 0 %}
+                            <div class="space-y-3">
+                                {% for code, data in rooms.items() %}
+                                <div class="p-4 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between hover:border-slate-700 transition">
+                                    <div>
+                                        <div class="text-sm font-semibold text-slate-200">{{ data.host }} のルーム</div>
+                                        <div class="text-xs text-slate-400 mt-0.5 font-mono">CODE: <span class="text-amber-400 font-bold">{{ code }}</span></div>
+                                    </div>
+                                    <form action="{{ url_for('chess_bp.join_room') }}" method="POST">
+                                        <input type="hidden" name="room_code" value="{{ code }}">
+                                        <button type="submit" class="px-3.5 py-2 bg-slate-800 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-lg text-xs font-semibold transition duration-200 flex items-center gap-1.5">
+                                            <span>参加</span>
+                                            <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                                        </button>
+                                    </form>
                                 </div>
-                                <form action="{{ url_for('chess_bp.join_room') }}" method="POST">
-                                    <input type="hidden" name="room_code" value="{{ code }}">
-                                    <button type="submit" class="px-3.5 py-2 bg-slate-800 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-lg text-xs font-semibold transition duration-200 flex items-center gap-1.5">
-                                        <span>参加</span>
-                                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                                    </button>
-                                </form>
+                                {% endfor %}
                             </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-12 text-slate-500">
-                            <i class="fa-solid fa-ghost text-4xl mb-3 block opacity-50"></i>
-                            <p class="text-sm">現在待機中のルームはありません。</p>
-                        </div>
-                    {% endif %}
+                        {% else %}
+                            <div class="text-center py-12 text-slate-500">
+                                <i class="fa-solid fa-ghost text-4xl mb-3 block opacity-50"></i>
+                                <p class="text-sm">現在待機中のルームはありません。</p>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -245,14 +250,15 @@
 
     <script>
         const currentRoomCode = "{{ room_code if room_code else '' }}";
-        const roomData = {% if room_data %}{{ room_data | tojson }}{% else %}null{% endif %};
+        let roomData = {% if room_data %}{{ room_data | tojson }}{% else %}null{% endif %};
         const playerName = "{{ player_name if player_name else '' }}";
 
         let game = new Chess();
         let playerIsWhite = true;
-        let isBotMode = false;
+        let isBotMode = true;
         let selectedSquare = null;
         let validMoves = [];
+        let statusPollInterval = null;
 
         const pieceGlyphs = {
             'p': '♟', 'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚',
@@ -265,12 +271,62 @@
                 document.getElementById('game-view').classList.remove('hidden');
                 document.getElementById('game-view').classList.add('flex');
                 initGameRoom();
+
+                // ルームのステータスを定期的に監視 (2秒おき)
+                statusPollInterval = setInterval(pollRoomStatus, 2000);
             }
         };
 
         window.addEventListener('beforeunload', leaveCurrentRoom);
 
+        async function refreshActiveRooms() {
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('fa-spin');
+            try {
+                const res = await fetch('/chess/api/rooms');
+                if (!res.ok) return;
+                const roomsObj = await res.json();
+                const container = document.getElementById('active-rooms-container');
+                
+                const keys = Object.keys(roomsObj);
+                if (keys.length > 0) {
+                    let html = '<div class="space-y-3">';
+                    for (const [code, data] of Object.entries(roomsObj)) {
+                        html += `
+                            <div class="p-4 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between hover:border-slate-700 transition">
+                                <div>
+                                    <div class="text-sm font-semibold text-slate-200">${data.host} のルーム</div>
+                                    <div class="text-xs text-slate-400 mt-0.5 font-mono">CODE: <span class="text-amber-400 font-bold">${code}</span></div>
+                                </div>
+                                <form action="/chess/join" method="POST">
+                                    <input type="hidden" name="room_code" value="${code}">
+                                    <button type="submit" class="px-3.5 py-2 bg-slate-800 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-lg text-xs font-semibold transition duration-200 flex items-center gap-1.5">
+                                        <span>参加</span>
+                                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        `;
+                    }
+                    html += '</div>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-slate-500">
+                            <i class="fa-solid fa-ghost text-4xl mb-3 block opacity-50"></i>
+                            <p class="text-sm">現在待機中のルームはありません。</p>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.error("Failed to refresh rooms:", e);
+            } finally {
+                setTimeout(() => icon.classList.remove('fa-spin'), 400);
+            }
+        }
+
         function leaveCurrentRoom() {
+            if (statusPollInterval) clearInterval(statusPollInterval);
             if (currentRoomCode && roomData) {
                 if (roomData.host === playerName && roomData.status === 'waiting') {
                     const url = `/chess/leave/${currentRoomCode}`;
@@ -287,13 +343,29 @@
             document.getElementById('display-room-code').innerText = currentRoomCode;
             document.getElementById('host-name').innerText = roomData.host || 'Host';
             
-            // ホストのランダム割り当てカラーを採用 (ゲストは逆の色)
+            // カラー決定
             if (roomData.host === playerName) {
                 playerIsWhite = roomData.host_is_white;
             } else {
                 playerIsWhite = !roomData.host_is_white;
             }
 
+            applyRoomStatusUI();
+
+            if (roomData.fen && roomData.fen !== 'start') {
+                game.load(roomData.fen);
+            }
+
+            renderBoard();
+            updateStatus();
+
+            // AIモードで黒番の場合の初手
+            if (isBotMode && !playerIsWhite && game.turn() === 'w') {
+                setTimeout(makeBotMove, 700);
+            }
+        }
+
+        function applyRoomStatusUI() {
             const badge = document.getElementById('game-status-badge');
             if (roomData.status === 'playing') {
                 isBotMode = false;
@@ -306,13 +378,53 @@
                 badge.innerText = 'ボット練習モード (' + (playerIsWhite ? 'あなたは白' : 'あなたは黒') + ')';
                 badge.className = 'px-3 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full text-xs font-semibold';
             }
+        }
 
-            renderBoard();
-            updateStatus();
+        async function pollRoomStatus() {
+            if (!currentRoomCode) return;
+            try {
+                const res = await fetch(`/chess/api/status/${currentRoomCode}`);
+                if (!res.ok) return;
+                const data = await res.json();
 
-            // もしボットモードで自分が黒番の場合、AIに初手を打たせる
-            if (isBotMode && !playerIsWhite && game.turn() === 'w') {
-                setTimeout(makeBotMove, 700);
+                const prevStatus = roomData.status;
+                const prevFen = game.fen();
+
+                roomData = data;
+
+                // ゲストが入室して playing に切り替わった瞬間を感知
+                if (prevStatus === 'waiting' && roomData.status === 'playing') {
+                    applyRoomStatusUI();
+                    alert('対戦相手（' + roomData.guest + '）が入室しました！対人戦を開始します。');
+                }
+
+                // 対人戦中、相手の手によってFENが更新されたかチェック
+                if (!isBotMode && roomData.fen && roomData.fen !== prevFen) {
+                    game.load(roomData.fen);
+                    selectedSquare = null;
+                    validMoves = [];
+                    renderBoard();
+                    updateStatus();
+                }
+            } catch (e) {
+                console.error("Polling error:", e);
+            }
+        }
+
+        async function syncMoveToServer() {
+            if (isBotMode) return;
+            try {
+                await fetch(`/chess/api/move/${currentRoomCode}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fen: game.fen(),
+                        turn: game.turn(),
+                        status: game.game_over() ? 'finished' : 'playing'
+                    })
+                });
+            } catch (e) {
+                console.error("Sync move error:", e);
             }
         }
 
@@ -322,7 +434,6 @@
 
             const board = game.board();
 
-            // 自分が黒プレイヤーの場合は盤面を180度反転して表示
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     const actualR = playerIsWhite ? r : (7 - r);
@@ -367,19 +478,17 @@
         }
 
         function handleSquareClick(coord) {
-            // ボットモード時、相手のターンのときは操作不可
-            if (isBotMode) {
-                const myTurn = (game.turn() === 'w' && playerIsWhite) || (game.turn() === 'b' && !playerIsWhite);
-                if (!myTurn) return;
-            }
+            // 対人戦のとき、相手のターンのときは操作不可
+            const myTurn = (game.turn() === 'w' && playerIsWhite) || (game.turn() === 'b' && !playerIsWhite);
+            if (!isBotMode && !myTurn) return;
+            if (isBotMode && !myTurn) return;
 
             const piece = game.get(coord);
 
             if (selectedSquare) {
                 const targetMove = validMoves.find(m => m.to === coord);
                 if (targetMove) {
-                    // 移動実行 (プロモーションは常にクイーンに自動昇格)
-                    const moveResult = game.move({
+                    game.move({
                         from: selectedSquare,
                         to: coord,
                         promotion: 'q'
@@ -389,6 +498,10 @@
                     validMoves = [];
                     renderBoard();
                     updateStatus();
+
+                    if (!isBotMode) {
+                        syncMoveToServer();
+                    }
 
                     if (game.game_over()) {
                         handleGameOver();
@@ -404,7 +517,6 @@
                     return;
                 }
 
-                // 自分の別の駒を選択し直した場合
                 if (piece && piece.color === game.turn()) {
                     selectedSquare = coord;
                     validMoves = game.moves({ square: coord, verbose: true });
@@ -414,7 +526,6 @@
                 }
             } else {
                 if (piece && piece.color === game.turn()) {
-                    // 自分の色の駒のみ選択可能
                     const isMyPieceColor = (piece.color === 'w' && playerIsWhite) || (piece.color === 'b' && !playerIsWhite);
                     if (isBotMode || isMyPieceColor) {
                         selectedSquare = coord;
@@ -431,7 +542,6 @@
             const possibleMoves = game.moves({ verbose: true });
             if (possibleMoves.length === 0) return;
 
-            // 攻撃できる手があれば優先的に選択
             const captureMoves = possibleMoves.filter(m => m.captured);
             const chosenMove = captureMoves.length > 0 
                 ? captureMoves[Math.floor(Math.random() * captureMoves.length)]
@@ -479,7 +589,6 @@
             }
             alert(message);
 
-            // AIモードの場合、勝敗が確定したら1.5秒後に自動リセット＆カラー再抽選で再スタート
             if (isBotMode) {
                 setTimeout(() => {
                     game.reset();
