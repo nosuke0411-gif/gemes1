@@ -4,12 +4,7 @@ import os
 from flask import Flask, render_template, request, session
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
-
-# Flask-Loginが使用可能であればインポート
-try:
-    from flask_login import current_user
-except ImportError:
-    current_user = None
+from flask_login import current_user
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'uno_secret_key_12345')
