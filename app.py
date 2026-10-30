@@ -11,6 +11,7 @@ from routes.revive import revive_bp
 from routes.ranking import ranking_bp
 from routes.transfer import transfer_bp
 from routes.chess import chess_bp
+from routes.uno import uno_bp
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "secret_key_here")
@@ -32,6 +33,7 @@ app.register_blueprint(revive_bp)
 app.register_blueprint(ranking_bp)
 app.register_blueprint(transfer_bp)
 app.register_blueprint(chess_bp, url_prefix='/chess')
+app.register_blueprint(uno_bp)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000, debug=True)
