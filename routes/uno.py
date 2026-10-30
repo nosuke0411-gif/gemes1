@@ -6,7 +6,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
 from flask_login import current_user
 
-app = Flask(__name__)
+uno_bp = Blueprint('uno',__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'uno_secret_key_12345')
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
