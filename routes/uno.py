@@ -316,7 +316,7 @@ def broadcast_state(room_code):
             state = game.get_state(p['id'])
             socketio.emit('game_state', state, room=p['id'])
 
-@app.route('/uno')
+@uno_bp.route('/uno')
 def index():
     return render_template('uno.html')
 
