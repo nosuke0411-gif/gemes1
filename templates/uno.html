@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>オンライン UNO ゲーム</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Socket.IO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .card-red { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+        .card-yellow { background: linear-gradient(135deg, #facc15, #eab308); color: black; }
+        .card-green { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; }
+        .card-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+        .card-wild { background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; }
+
+        .uno-card {
+            transition: all 0.2s ease-in-out;
+            user-select: none;
+        }
+        .uno-card:hover {
+            transform: translateY(-12px) scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center shadow-lg">
+        <div class="flex items-center space-x-3">
+            <i class="fa-solid font-black text-red-500 text-3xl fa-layer-group"></i>
+            <h1 class="text-2xl font-black tracking-wider text-amber-400">ONLINE UNO</h1>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <div id="room-display" class="hidden text-sm bg-slate-700 px-4 py-2 rounded-full border border-slate-600">
+                ルームID: <span id="current-room-id" class="font-bold text-amber-300"></span>
+            </div>
+            <!-- Games List Return Button -->
+            <a href="/games" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-bold rounded-xl border border-slate-600 transition flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i> ゲーム一覧へ
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container mx-auto p-4 flex-grow flex flex-col justify-center">
+
+        <!-- LOBBY SCREEN -->
+        <div id="lobby-screen" class="max-w-md mx-auto w-full bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-2xl space-y-6">
+            <h2 class="text-xl font-bold text-center text-slate-200">ゲームロビー</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1 text-slate-400">プレイヤー名</label>
+                    <input type="text" id="input-name" placeholder="ユーザー名" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <!-- Create Room Area -->
+                <div class="pt-2">
+                    <button onclick="requestCreateRoom()" class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 font-bold text-slate-900 rounded-xl hover:opacity-90 transition shadow-lg text-md flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus-circle"></i> 新規部屋を作成して始める
+                    </button>
+                </div>
+
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-slate-700"></div>
+                    <span class="flex-shrink mx-4 text-slate-500 text-xs uppercase">または</span>
+                    <div class="flex-grow border-t border-slate-700"></div>
+                </div>
+
+                <!-- Join Room Area -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-slate-400">既存のルームコードで参加</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="input-room" placeholder="コード (例: A8X2)" class="uppercase w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <button onclick="joinGame()" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 font-bold text-slate-100 rounded-xl transition border border-slate-600 whitespace-nowrap">
+                            参加
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-xs text-slate-400 text-center">
+                ※最小3人〜最大6人でプレイできます。
+            </div>
+        </div>
+
+        <!-- GAME TABLE SCREEN -->
+        <div id="game-screen" class="hidden flex flex-col lg:flex-row gap-6 h-full">
+
+            <!-- Left/Center Playfield -->
+            <div class="flex-grow flex flex-col justify-between space-y-6">
+
+                <!-- Game Status Banner & Direction -->
+                <div class="bg-slate-800 rounded-xl p-4 border border-slate-700 flex justify-between items-center shadow-md">
+                    <div>
+                        <span class="text-xs text-slate-400">現在のターン</span>
+                        <div id="turn-indicator" class="text-xl font-extrabold text-amber-400">待機中...</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs text-slate-400">回転方向</span>
+                        <div id="direction-indicator" class="text-sm font-bold text-slate-200"><i class="fa-solid fa-sync"></i> 時計回り</div>
+                    </div>
+                </div>
+
+                <!-- Central Card Playing Area -->
+                <div class="bg-slate-800/80 rounded-2xl p-8 border border-slate-700 flex flex-col items-center justify-center min-h-[260px] relative">
+                    <!-- Color Indicator Ring -->
+                    <div id="color-indicator" class="absolute inset-2 rounded-xl border-4 border-dashed border-slate-600 pointer-events-none transition-colors duration-300"></div>
+
+                    <div class="flex items-center gap-8 z-10">
+                        <!-- Draw Deck -->
+                        <div onclick="drawCard()" class="w-24 h-36 bg-slate-900 border-2 border-slate-600 rounded-xl flex flex-col justify-center items-center cursor-pointer hover:border-amber-400 transition group shadow-xl">
+                            <i class="fa-solid fa-box-archive text-2xl text-slate-500 group-hover:text-amber-400 mb-1"></i>
+                            <span class="text-xs font-bold text-slate-400">山札</span>
+                            <span id="deck-count" class="text-xs text-slate-500">(0)</span>
+                        </div>
+
+                        <!-- Top Discard Pile Card -->
+                        <div id="discard-card" class="w-24 h-36 rounded-xl border-2 border-white/20 flex flex-col justify-between p-3 shadow-2xl card-wild">
+                            <div class="text-xs font-bold">UNO</div>
+                            <div class="text-2xl font-black text-center" id="discard-val">-</div>
+                            <div class="text-xs font-bold text-right">UNO</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Player's Hand -->
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-lg space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-md font-bold text-slate-300">あなたの手札 (<span id="hand-count">0</span>枚)</h3>
+                        <div class="flex space-x-2">
+                            <button id="btn-pass" onclick="passTurn()" class="hidden px-4 py-2 bg-slate-700 hover:bg-slate-600 text-xs font-bold rounded-lg border border-slate-600">
+                                パス
+                            </button>
+                            <button onclick="callUno()" class="px-5 py-2 bg-red-600 hover:bg-red-500 font-extrabold text-white rounded-lg shadow-lg text-sm animate-pulse">
+                                🔥 UNO!
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Cards Container -->
+                    <div id="hand-cards" class="flex flex-wrap gap-3 overflow-x-auto py-2 min-h-[160px] items-center">
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Sidebar: Player List & Logs -->
+            <div class="w-full lg:w-80 flex flex-col space-y-6">
+
+                <!-- Start Game Button (Host/Waiting state) -->
+                <div id="lobby-controls" class="bg-slate-800 rounded-2xl p-4 border border-slate-700 shadow-md">
+                    <button id="btn-start" onclick="startGame()" class="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-extrabold rounded-xl shadow-lg">
+                        ゲームを開始する
+                    </button>
+                </div>
+
+                <!-- Players Status List -->
+                <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 shadow-md space-y-3">
+                    <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider">プレイヤー一覧</h3>
+                    <div id="players-list" class="space-y-2">
+                    </div>
+                </div>
+
+                <!-- Game Logs -->
+                <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 shadow-md flex-grow flex flex-col h-64">
+                    <h3 class="text-sm font-bold text-slate-400 mb-2">対戦ログ</h3>
+                    <div id="game-logs" class="flex-grow overflow-y-auto text-xs space-y-1 font-mono text-slate-300 pr-1">
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Color Picker Modal -->
+    <div id="color-modal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-2xl max-w-xs w-full text-center space-y-4">
+            <h3 class="text-lg font-bold text-slate-200">変更する色を選択</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="selectColor('Red')" class="py-4 rounded-xl bg-red-600 hover:bg-red-500 font-bold text-white">Red</button>
+                <button onclick="selectColor('Yellow')" class="py-4 rounded-xl bg-yellow-500 hover:bg-yellow-400 font-bold text-slate-900">Yellow</button>
+                <button onclick="selectColor('Green')" class="py-4 rounded-xl bg-green-600 hover:bg-green-500 font-bold text-white">Green</button>
+                <button onclick="selectColor('Blue')" class="py-4 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-white">Blue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-3 rounded-xl shadow-xl hidden z-50 text-sm font-bold">
+    </div>
+
+    <script>
+        const socket = io();
+        let currentRoom = '';
+        let pendingWildCardId = null;
+
+        socket.on('connect', () => {
+            socket.emit('get_user_info');
+        });
+
+        socket.on('user_info', (data) => {
+            if (data.user_name && data.user_name !== 'Guest') {
+                document.getElementById('input-name').value = data.user_name;
+            }
+        });
+
+        socket.on('room_created', (data) => {
+            currentRoom = data.room_code;
+            document.getElementById('input-room').value = currentRoom;
+            joinGameWithRoom(currentRoom);
+        });
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        socket.on('error_message', (data) => {
+            showToast(data.message);
+        });
+
+        socket.on('game_state', (state) => {
+            renderState(state);
+        });
+
+        function requestCreateRoom() {
+            socket.emit('create_room');
+        }
+
+        function joinGame() {
+            const room = document.getElementById('input-room').value.trim().toUpperCase();
+            if (!room) {
+                showToast('ルームコードを入力してください。');
+                return;
+            }
+            joinGameWithRoom(room);
+        }
+
+        function joinGameWithRoom(room) {
+            const name = document.getElementById('input-name').value.trim();
+            if (!name) {
+                showToast('プレイヤー名を入力してください。');
+                return;
+            }
+
+            currentRoom = room;
+            document.getElementById('current-room-id').innerText = currentRoom;
+
+            socket.emit('join_game', { name: name, room: currentRoom });
+
+            document.getElementById('lobby-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('room-display').classList.remove('hidden');
+        }
+
+        function startGame() {
+            socket.emit('start_game', { room: currentRoom });
+        }
+
+        function drawCard() {
+            socket.emit('draw_card', { room: currentRoom });
+        }
+
+        function passTurn() {
+            socket.emit('pass_turn', { room: currentRoom });
+        }
+
+        function callUno() {
+            socket.emit('call_uno', { room: currentRoom });
+        }
+
+        function catchUno(targetName) {
+            socket.emit('catch_uno', { room: currentRoom, target_name: targetName });
+        }
+
+        function playCard(cardId, cardType) {
+            if (cardType === 'wild') {
+                pendingWildCardId = cardId;
+                document.getElementById('color-modal').classList.remove('hidden');
+            } else {
+                socket.emit('play_card', { room: currentRoom, card_id: cardId });
+            }
+        }
+
+        function selectColor(color) {
+            document.getElementById('color-modal').classList.add('hidden');
+            if (pendingWildCardId) {
+                socket.emit('play_card', {
+                    room: currentRoom,
+                    card_id: pendingWildCardId,
+                    chosen_color: color
+                });
+                pendingWildCardId = null;
+            }
+        }
+
+        function renderState(state) {
+            document.getElementById('direction-indicator').innerHTML = `<i class="fa-solid fa-sync"></i> ${state.direction}`;
+            document.getElementById('deck-count').innerText = `(${state.deck_count})`;
+
+            if (state.status === 'waiting') {
+                document.getElementById('turn-indicator').innerText = '参加者待機中...';
+                document.getElementById('lobby-controls').classList.remove('hidden');
+            } else if (state.status === 'playing') {
+                document.getElementById('lobby-controls').classList.add('hidden');
+                document.getElementById('turn-indicator').innerText = state.is_my_turn ? 'あなたの番です！' : `${state.current_turn_name} の番`;
+            } else if (state.status === 'finished') {
+                document.getElementById('turn-indicator').innerText = `🏆 勝者: ${state.winner}`;
+                document.getElementById('lobby-controls').classList.remove('hidden');
+            }
+
+            const colorBox = document.getElementById('color-indicator');
+            const colorMap = {
+                'Red': 'border-red-500',
+                'Yellow': 'border-yellow-400',
+                'Green': 'border-green-500',
+                'Blue': 'border-blue-500'
+            };
+            colorBox.className = `absolute inset-2 rounded-xl border-4 border-dashed pointer-events-none transition-colors duration-300 ${colorMap[state.current_color] || 'border-slate-600'}`;
+
+            if (state.top_card) {
+                const discardEl = document.getElementById('discard-card');
+                const cardColorClass = state.top_card.color === 'Wild' ? 'card-wild' : `card-${state.top_card.color.toLowerCase()}`;
+                discardEl.className = `w-24 h-36 rounded-xl border-2 border-white/20 flex flex-col justify-between p-3 shadow-2xl ${cardColorClass}`;
+                document.getElementById('discard-val').innerText = state.top_card.value;
+            }
+
+            const passBtn = document.getElementById('btn-pass');
+            if (state.is_my_turn && state.has_drawn) {
+                passBtn.classList.remove('hidden');
+            } else {
+                passBtn.classList.add('hidden');
+            }
+
+            const cardsContainer = document.getElementById('hand-cards');
+            cardsContainer.innerHTML = '';
+            document.getElementById('hand-count').innerText = state.my_hand.length;
+
+            state.my_hand.forEach(card => {
+                const cardEl = document.createElement('div');
+                const cardColorClass = card.color === 'Wild' ? 'card-wild' : `card-${card.color.toLowerCase()}`;
+                cardEl.className = `uno-card w-20 h-32 rounded-xl p-2 flex flex-col justify-between cursor-pointer border border-white/20 shadow-md ${cardColorClass}`;
+                cardEl.onclick = () => playCard(card.id, card.type);
+
+                cardEl.innerHTML = `
+                    <div class="text-[10px] font-bold tracking-tight">${card.color}</div>
+                    <div class="text-xl font-black text-center">${card.value}</div>
+                    <div class="text-[10px] font-bold text-right">${card.value}</div>
+                `;
+                cardsContainer.appendChild(cardEl);
+            });
+
+            const playersList = document.getElementById('players-list');
+            playersList.innerHTML = '';
+            state.players.forEach(p => {
+                const pEl = document.createElement('div');
+                pEl.className = `flex justify-between items-center p-3 rounded-xl border ${p.is_current ? 'bg-amber-500/10 border-amber-500/50' : 'bg-slate-900 border-slate-700'}`;
+                
+                pEl.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="font-bold text-sm ${p.is_current ? 'text-amber-400' : 'text-slate-200'}">${p.name}</span>
+                        ${p.uno_called ? '<span class="text-[10px] bg-red-600 text-white font-black px-2 py-0.5 rounded-full">UNO</span>' : ''}
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs text-slate-400">${p.card_count} 枚</span>
+                        ${p.card_count === 1 && !p.uno_called ? `<button onclick="catchUno('${p.name}')" class="text-[10px] bg-yellow-600 hover:bg-yellow-500 px-2 py-1 rounded text-white font-bold">指摘</button>` : ''}
+                    </div>
+                `;
+                playersList.appendChild(pEl);
+            });
+
+            const logsContainer = document.getElementById('game-logs');
+            logsContainer.innerHTML = '';
+            state.logs.forEach(log => {
+                const logEl = document.createElement('div');
+                logEl.innerText = log;
+                logsContainer.appendChild(logEl);
+            });
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>
