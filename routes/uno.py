@@ -118,8 +118,8 @@ class UnoGame:
         return drawn
 
     def start_game(self):
-        if not (3 <= len(self.players) <= 6):
-            return False, "プレイヤー人数は3〜6人である必要があります。"
+        if not (3 <= len(self.players) <= 10):
+            return False, "プレイヤー人数は3〜10人である必要があります。"
 
         self.deck = create_deck()
         self.discard_pile = []
