@@ -12,10 +12,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .card-red { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
-        .card-yellow { background: linear-gradient(135deg, #facc15, #eab308); color: black; }
+        .card-yellow { background: linear-gradient(135deg, #facc15, #ca8a04); color: black; }
         .card-green { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; }
         .card-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
-        .card-wild { background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; }
+        .card-wild-bg { 
+            background: linear-gradient(135deg, #ef4444 0%, #3b82f6 33%, #22c55e 66%, #facc15 100%); 
+            color: white; 
+        }
 
         .uno-card {
             transition: all 0.2s ease-in-out;
@@ -23,7 +26,7 @@
         }
         .uno-card:hover {
             transform: translateY(-12px) scale(1.05);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
         }
     </style>
 </head>
@@ -122,10 +125,8 @@
                         </div>
 
                         <!-- Top Discard Pile Card -->
-                        <div id="discard-card" class="w-24 h-36 rounded-xl border-2 border-white/20 flex flex-col justify-between p-3 shadow-2xl card-wild">
-                            <div class="text-xs font-bold">UNO</div>
-                            <div class="text-2xl font-black text-center" id="discard-val">-</div>
-                            <div class="text-xs font-bold text-right">UNO</div>
+                        <div id="discard-card" class="w-24 h-36 rounded-xl border-2 border-white/20 flex flex-col justify-between p-2 shadow-2xl card-wild-bg">
+                            <!-- Card Content generated dynamically -->
                         </div>
                     </div>
                 </div>
@@ -186,10 +187,10 @@
         <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-2xl max-w-xs w-full text-center space-y-4">
             <h3 class="text-lg font-bold text-slate-200">変更する色を選択</h3>
             <div class="grid grid-cols-2 gap-4">
-                <button onclick="selectColor('Red')" class="py-4 rounded-xl bg-red-600 hover:bg-red-500 font-bold text-white">Red</button>
-                <button onclick="selectColor('Yellow')" class="py-4 rounded-xl bg-yellow-500 hover:bg-yellow-400 font-bold text-slate-900">Yellow</button>
-                <button onclick="selectColor('Green')" class="py-4 rounded-xl bg-green-600 hover:bg-green-500 font-bold text-white">Green</button>
-                <button onclick="selectColor('Blue')" class="py-4 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-white">Blue</button>
+                <button onclick="selectColor('Red')" class="py-4 rounded-xl bg-red-600 hover:bg-red-500 font-bold text-white">赤 (Red)</button>
+                <button onclick="selectColor('Yellow')" class="py-4 rounded-xl bg-yellow-500 hover:bg-yellow-400 font-bold text-slate-900">黄 (Yellow)</button>
+                <button onclick="selectColor('Green')" class="py-4 rounded-xl bg-green-600 hover:bg-green-500 font-bold text-white">緑 (Green)</button>
+                <button onclick="selectColor('Blue')" class="py-4 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-white">青 (Blue)</button>
             </div>
         </div>
     </div>
@@ -202,6 +203,14 @@
         const socket = io();
         let currentRoom = '';
         let pendingWildCardId = null;
+
+        const COLOR_MAP = {
+            'Red': '赤',
+            'Yellow': '黄',
+            'Green': '緑',
+            'Blue': '青',
+            'Wild': 'ワイルド'
+        };
 
         socket.on('connect', () => {
             socket.emit('get_user_info');
@@ -305,6 +314,73 @@
             }
         }
 
+        // カードデザイン描画ヘルパー
+        function getCardVisual(card) {
+            let bgClass = '';
+            if (card.color === 'Wild') {
+                bgClass = 'card-wild-bg';
+            } else {
+                bgClass = `card-${card.color.toLowerCase()}`;
+            }
+
+            let mainContent = '';
+            let cornerLabel = '';
+
+            switch (card.value) {
+                case 'Skip':
+                    mainContent = `<div class="flex flex-col items-center justify-center leading-none">
+                        <i class="fa-solid fa-ban text-2xl mb-1"></i>
+                        <span class="text-[11px] font-black tracking-tighter">スキップ</span>
+                    </div>`;
+                    cornerLabel = `<i class="fa-solid fa-ban"></i>`;
+                    break;
+                case 'Reverse':
+                    mainContent = `<div class="flex flex-col items-center justify-center leading-none">
+                        <i class="fa-solid fa-rotate-left text-2xl mb-1"></i>
+                        <span class="text-[11px] font-black tracking-tighter">リバース</span>
+                    </div>`;
+                    cornerLabel = `<i class="fa-solid fa-rotate-left"></i>`;
+                    break;
+                case 'DrawTwo':
+                    mainContent = `<div class="flex flex-col items-center justify-center leading-none">
+                        <span class="text-2xl font-black">+2</span>
+                        <span class="text-[10px] font-bold">ドロー2</span>
+                    </div>`;
+                    cornerLabel = `+2`;
+                    break;
+                case 'Wild':
+                    mainContent = `<div class="flex flex-col items-center justify-center leading-none drop-shadow">
+                        <i class="fa-solid fa-palette text-2xl mb-1"></i>
+                        <span class="text-[10px] font-black tracking-tighter">色変更</span>
+                    </div>`;
+                    cornerLabel = `<i class="fa-solid fa-palette"></i>`;
+                    break;
+                case 'WildDrawFour':
+                    mainContent = `<div class="flex flex-col items-center justify-center leading-none drop-shadow">
+                        <span class="text-2xl font-black">+4</span>
+                        <span class="text-[9px] font-black tracking-tighter">色変更+4</span>
+                    </div>`;
+                    cornerLabel = `+4`;
+                    break;
+                default:
+                    // 数字カード
+                    mainContent = `<span class="text-3xl font-black drop-shadow">${card.value}</span>`;
+                    cornerLabel = `${card.value}`;
+                    break;
+            }
+
+            const headerColorName = COLOR_MAP[card.color] || card.color;
+
+            return {
+                bgClass,
+                html: `
+                    <div class="text-[9px] font-bold tracking-tight truncate w-full text-left leading-none opacity-80">${headerColorName}</div>
+                    <div class="flex-grow flex items-center justify-center w-full my-1">${mainContent}</div>
+                    <div class="text-[9px] font-bold text-right leading-none w-full">${cornerLabel}</div>
+                `
+            };
+        }
+
         function renderState(state) {
             document.getElementById('direction-indicator').innerHTML = `<i class="fa-solid fa-sync"></i> ${state.direction}`;
             document.getElementById('deck-count').innerText = `(${state.deck_count})`;
@@ -331,9 +407,9 @@
 
             if (state.top_card) {
                 const discardEl = document.getElementById('discard-card');
-                const cardColorClass = state.top_card.color === 'Wild' ? 'card-wild' : `card-${state.top_card.color.toLowerCase()}`;
-                discardEl.className = `w-24 h-36 rounded-xl border-2 border-white/20 flex flex-col justify-between p-3 shadow-2xl ${cardColorClass}`;
-                document.getElementById('discard-val').innerText = state.top_card.value;
+                const visual = getCardVisual(state.top_card);
+                discardEl.className = `w-24 h-36 rounded-xl border-2 border-white/20 flex flex-col justify-between p-2 shadow-2xl ${visual.bgClass}`;
+                discardEl.innerHTML = visual.html;
             }
 
             const passBtn = document.getElementById('btn-pass');
@@ -349,15 +425,12 @@
 
             state.my_hand.forEach(card => {
                 const cardEl = document.createElement('div');
-                const cardColorClass = card.color === 'Wild' ? 'card-wild' : `card-${card.color.toLowerCase()}`;
-                cardEl.className = `uno-card w-20 h-32 rounded-xl p-2 flex flex-col justify-between cursor-pointer border border-white/20 shadow-md ${cardColorClass}`;
-                cardEl.onclick = () => playCard(card.id, card.type);
+                const visual = getCardVisual(card);
 
-                cardEl.innerHTML = `
-                    <div class="text-[10px] font-bold tracking-tight">${card.color}</div>
-                    <div class="text-xl font-black text-center">${card.value}</div>
-                    <div class="text-[10px] font-bold text-right">${card.value}</div>
-                `;
+                cardEl.className = `uno-card w-20 h-32 rounded-xl p-2 flex flex-col justify-between cursor-pointer border border-white/20 shadow-md ${visual.bgClass}`;
+                cardEl.onclick = () => playCard(card.id, card.type);
+                cardEl.innerHTML = visual.html;
+
                 cardsContainer.appendChild(cardEl);
             });
 
