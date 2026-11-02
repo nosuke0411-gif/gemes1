@@ -5,3 +5,8 @@ requests
 isodate
 python-dotenv
 gunicorn
+flask-socketio
+eventlet
+python-engineio
+python-socketio
+flask-cors
