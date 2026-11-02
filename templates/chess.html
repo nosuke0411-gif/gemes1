@@ -32,10 +32,10 @@
             grid-template-rows: repeat(8, 1fr);
             width: 100%;
             height: 100%;
-            border: 4px solid #334155;
-            border-radius: 8px;
+            border: 6px solid #475569;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.6);
         }
 
         .square {
@@ -43,61 +43,77 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-size: clamp(2rem, 5.5vw, 2.75rem);
             user-select: none;
             cursor: pointer;
-            transition: background-color 0.15s ease;
+            transition: background-color 0.15s ease, transform 0.1s ease;
             width: 100%;
             height: 100%;
         }
 
+        /* マス目の色設定：白マスと黄土色マス（アンバー・ウッド調） */
         .square.white-square {
-            background-color: #cbd5e1;
-            color: #0f172a;
+            background-color: #f1f5f9;
+            color: #1e293b;
         }
 
         .square.black-square {
-            background-color: #475569;
+            background-color: #b45309; /* 落ち着いた黄土色・アンバー */
             color: #f8fafc;
         }
 
+        /* 選択中のマス */
         .square.selected {
-            background-color: #f59e0b !important;
+            background-color: #3b82f6 !important; /* 明快なブルーで強調 */
         }
 
+        /* 移動可能なマス */
         .square.valid-move::after {
             content: '';
             position: absolute;
-            width: 28%;
-            height: 28%;
-            background-color: rgba(16, 185, 129, 0.75);
+            width: 30%;
+            height: 30%;
+            background-color: rgba(16, 185, 129, 0.85);
             border-radius: 50%;
-            box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
         }
 
+        /* 攻撃/駒取り可能なマス */
         .square.valid-attack {
             background-color: #ef4444 !important;
         }
 
+        /* 駒の統一スタイル */
         .piece {
             line-height: 1;
-            transition: transform 0.1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        /* 白の駒：統一したクリーンな質感と均一なドロップシャドウ */
         .piece-white {
             color: #ffffff;
-            text-shadow: 0 0 6px rgba(56, 189, 248, 0.9), 0 2px 4px rgba(0, 0, 0, 0.8);
-            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
+            filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 1px rgba(0, 0, 0, 0.8));
         }
 
+        /* 黒の駒：白駒と対になる統一した質感と視認性のアウトライン */
         .piece-black {
-            color: #1e293b;
-            text-shadow: 0 0 6px rgba(244, 63, 94, 0.8), 0 0 2px rgba(255, 255, 255, 0.6);
-            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.8));
+            color: #0f172a;
+            filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 1px rgba(255, 255, 255, 0.5));
         }
 
-        .piece:hover {
+        .square:hover .piece {
             transform: scale(1.15);
+        }
+
+        /* カスタムモーダル */
+        .modal-backdrop {
+            background-color: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(4px);
         }
     </style>
 </head>
@@ -209,7 +225,7 @@
                     <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">ROOM CODE</span>
                     <div class="flex items-center gap-2">
                         <span id="display-room-code" class="text-lg font-black font-mono text-amber-400">----</span>
-                        <button onclick="copyRoomCode()" class="text-slate-400 hover:text-white text-xs p-1">
+                        <button onclick="copyRoomCode()" class="text-slate-400 hover:text-white text-xs p-1" title="コードをコピー">
                             <i class="fa-regular fa-copy"></i>
                         </button>
                     </div>
@@ -244,6 +260,17 @@
 
     </main>
 
+    <!-- 通知ダイアログ・モーダル (alertの代替) -->
+    <div id="custom-alert" class="fixed inset-0 modal-backdrop hidden items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl space-y-4">
+            <i id="modal-icon" class="fa-solid fa-circle-info text-3xl text-amber-400"></i>
+            <p id="modal-message" class="text-sm font-medium text-slate-200"></p>
+            <button onclick="closeModal()" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition">
+                OK
+            </button>
+        </div>
+    </div>
+
     <footer class="bg-slate-950 py-3 text-center text-xs text-slate-600 border-t border-slate-900">
         Chess Engine • Render Active
     </footer>
@@ -260,9 +287,10 @@
         let validMoves = [];
         let statusPollInterval = null;
 
+        // 駒のグリフ表記（均一なスタイルと視認性を保持するUnicodeチェス記号）
         const pieceGlyphs = {
             'p': '♟', 'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚',
-            'P': '♙', 'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔'
+            'P': '♟', 'R': '♜', 'N': '♞', 'B': '♝', 'Q': '♛', 'K': '♚'
         };
 
         window.onload = () => {
@@ -278,6 +306,20 @@
         };
 
         window.addEventListener('beforeunload', leaveCurrentRoom);
+
+        function showModal(message, iconClass = "fa-solid fa-circle-info text-amber-400") {
+            const modal = document.getElementById('custom-alert');
+            document.getElementById('modal-message').innerText = message;
+            document.getElementById('modal-icon').className = `text-3xl ${iconClass}`;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('custom-alert');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
 
         async function refreshActiveRooms() {
             const icon = document.getElementById('refresh-icon');
@@ -395,7 +437,7 @@
                 // ゲストが入室して playing に切り替わった瞬間を感知
                 if (prevStatus === 'waiting' && roomData.status === 'playing') {
                     applyRoomStatusUI();
-                    alert('対戦相手（' + roomData.guest + '）が入室しました！対人戦を開始します。');
+                    showModal('対戦相手（' + roomData.guest + '）が入室しました！対人戦を開始します。', 'fa-solid fa-user-check text-emerald-400');
                 }
 
                 // 対人戦中、相手の手によってFENが更新されたかチェック
@@ -466,7 +508,7 @@
                         const pieceEl = document.createElement('span');
                         const isWhitePiece = pieceObj.color === 'w';
                         pieceEl.className = `piece ${isWhitePiece ? 'piece-white' : 'piece-black'}`;
-                        const symbolKey = isWhitePiece ? pieceObj.type.toUpperCase() : pieceObj.type.toLowerCase();
+                        const symbolKey = pieceObj.type.toLowerCase();
                         pieceEl.innerText = pieceGlyphs[symbolKey];
                         square.appendChild(pieceEl);
                     }
@@ -587,7 +629,7 @@
             } else if (game.in_draw()) {
                 message = "引き分け（ドロー）となりました。";
             }
-            alert(message);
+            showModal(message, 'fa-solid fa-trophy text-amber-400');
 
             if (isBotMode) {
                 setTimeout(() => {
@@ -603,15 +645,19 @@
                     if (!playerIsWhite && game.turn() === 'w') {
                         setTimeout(makeBotMove, 700);
                     }
-                }, 1500);
+                }, 2000);
             }
         }
 
         function copyRoomCode() {
             if (!currentRoomCode) return;
-            navigator.clipboard.writeText(currentRoomCode).then(() => {
-                alert('参加コード ' + currentRoomCode + ' をコピーしました！');
-            });
+            const tempInput = document.createElement('input');
+            tempInput.value = currentRoomCode;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showModal('参加コード ' + currentRoomCode + ' をコピーしました！', 'fa-solid fa-copy text-emerald-400');
         }
     </script>
 </body>
