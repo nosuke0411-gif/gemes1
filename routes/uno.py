@@ -1,15 +1,16 @@
 import random
 import string
 import os
-from flask import Flask, render_template, request, session, Blueprint
+from flask import render_template, request, session, Blueprint
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
-from flask_login import current_user
+try:
+    from flask_login import current_user
+except ImportError:
+    current_user = None
 
-uno_bp = Blueprint('uno',__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'uno_secret_key_12345')
-CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+uno_bp = Blueprint('uno', __name__)
+socketio = SocketIO(cors_allowed_origins="*")
 
 def get_current_user_name():
     """ DB / Flask-Login からログインユーザー名を取得 """
