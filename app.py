@@ -34,6 +34,7 @@ app.register_blueprint(ranking_bp)
 app.register_blueprint(transfer_bp)
 app.register_blueprint(chess_bp, url_prefix='/chess')
 app.register_blueprint(uno_bp)
+socketio.init_app(app) 
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000, debug=True)
