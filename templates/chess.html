@@ -83,7 +83,7 @@
             background-color: #ef4444 !important;
         }
 
-        /* 駒の統一スタイル */
+        /* 駒のスタイリング */
         .piece {
             line-height: 1;
             display: flex;
@@ -94,16 +94,16 @@
             transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* 白の駒：統一したクリーンな質感と均一なドロップシャドウ */
+        /* 白の駒：純白＋くっきりした外枠ドロップシャドウ */
         .piece-white {
             color: #ffffff;
-            filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 1px rgba(0, 0, 0, 0.8));
+            filter: drop-shadow(0 0 2px #000000) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
         }
 
-        /* 黒の駒：白駒と対になる統一した質感と視認性のアウトライン */
+        /* 黒の駒：深みのあるブラック＋くっきりした白のアウトライン効果 */
         .piece-black {
-            color: #0f172a;
-            filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 1px rgba(255, 255, 255, 0.5));
+            color: #09090b;
+            filter: drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 1px #ffffff) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.7));
         }
 
         .square:hover .piece {
@@ -287,10 +287,10 @@
         let validMoves = [];
         let statusPollInterval = null;
 
-        // 駒のグリフ表記（均一なスタイルと視認性を保持するUnicodeチェス記号）
+        // 駒のグリフ表記（大文字: 白駒(♙♖♘...)/ 小文字: 黒駒(♟♜♞...))
         const pieceGlyphs = {
             'p': '♟', 'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚',
-            'P': '♟', 'R': '♜', 'N': '♞', 'B': '♝', 'Q': '♛', 'K': '♚'
+            'P': '♙', 'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔'
         };
 
         window.onload = () => {
@@ -508,7 +508,7 @@
                         const pieceEl = document.createElement('span');
                         const isWhitePiece = pieceObj.color === 'w';
                         pieceEl.className = `piece ${isWhitePiece ? 'piece-white' : 'piece-black'}`;
-                        const symbolKey = pieceObj.type.toLowerCase();
+                        const symbolKey = isWhitePiece ? pieceObj.type.toUpperCase() : pieceObj.type.toLowerCase();
                         pieceEl.innerText = pieceGlyphs[symbolKey];
                         square.appendChild(pieceEl);
                     }
