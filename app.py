@@ -11,7 +11,7 @@ from routes.revive import revive_bp
 from routes.ranking import ranking_bp
 from routes.transfer import transfer_bp
 from routes.chess import chess_bp
-from routes.uno import uno_bp
+from routes.uno import uno_bp,socketio
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "secret_key_here")
