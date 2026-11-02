@@ -6,7 +6,8 @@ isodate
 python-dotenv
 gunicorn
 flask-socketio
-eventlet
+gevent
+gevent-websocket
 python-engineio
 python-socketio
 flask-cors
