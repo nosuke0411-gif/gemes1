@@ -263,6 +263,7 @@
     .black-suit { color: #212121; }
     .gold-suit { color: #b8860b; }
     .green-suit { color: #2e7d32; }
+    .uno-suit { color: #e53935; }
 
     .card-center {
         display: flex;
@@ -526,6 +527,30 @@
                 </div>
             </a>
 
+            <!-- ウノ (UNO) -->
+            <a href="/uno" class="card-btn">
+                <div class="card-corner top-left uno-suit">
+                    <div>U</div>
+                    <div>★</div>
+                </div>
+                <div class="card-center">
+                    <div class="card-icon uno-suit">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="5" width="18" height="14" rx="3" fill="#e53935" stroke="#ffb300" stroke-width="1.5"/>
+                            <path d="M6 15L18 9" stroke="#ffffff" stroke-width="2.5"/>
+                            <circle cx="9" cy="10" r="1.5" fill="#ffeb3b"/>
+                            <circle cx="15" cy="14" r="1.5" fill="#4caf50"/>
+                        </svg>
+                    </div>
+                    <div class="card-title">ウノ</div>
+                    <div class="card-subtitle">UNO CARD</div>
+                </div>
+                <div class="card-corner bottom-right uno-suit">
+                    <div>U</div>
+                    <div>★</div>
+                </div>
+            </a>
+
             <!-- ランキング (Crown King) -->
             <a href="/ranking" class="card-btn">
                 <div class="card-corner top-left gold-suit">
@@ -693,6 +718,3 @@ if (gameScroll && btnLeft && btnRight) {
 
 </body>
 </html>
-```
-
-もしこれに差し替えても依然としてRender側で500エラーが出る場合は、Renderのログ（`Exception on /games [GET]` の直下に表示されるスタックトレースの詳細）を確認してください。`app.py` 側（Python）の `/games` ルートで例外が発生している可能性があります。
