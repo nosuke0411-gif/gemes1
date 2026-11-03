@@ -70,7 +70,7 @@ class UnoGame:
             self.logs.pop(0)
 
     def add_player(self, sid, name):
-        if len(self.players) >= 6 or self.status != 'waiting':
+        if len(self.players) >= 10 or self.status != 'waiting':
             return False
         existing_names = [p['name'] for p in self.players]
         final_name = name
