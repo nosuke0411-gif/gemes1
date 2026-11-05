@@ -259,6 +259,13 @@
 
         socket.on('connect', () => {
             socket.emit('get_user_info');
+            // タブ切り替え等で再接続された場合、参加中であれば自動的にルームに復キー
+            if (currentRoom) {
+                const name = document.getElementById('input-name').value.trim();
+                if (name) {
+                    socket.emit('join_game', { name: name, room: currentRoom });
+                }
+            }
         });
 
         socket.on('user_info', (data) => {
