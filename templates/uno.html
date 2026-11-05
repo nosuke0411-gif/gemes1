@@ -28,6 +28,22 @@
             transform: translateY(-12px) scale(1.05);
             box-shadow: 0 10px 20px rgba(0,0,0,0.4);
         }
+
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 116, 139, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.8);
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
@@ -89,7 +105,7 @@
             </div>
 
             <div class="text-xs text-slate-400 text-center">
-                ※最小3人〜最大6人でプレイできます。
+                ※最小3人〜最大10人でプレイできます。
             </div>
         </div>
 
@@ -152,7 +168,7 @@
 
             </div>
 
-            <!-- Right Sidebar: Player List & Logs -->
+            <!-- Right Sidebar: Player List & Logs/Chat Tab -->
             <div class="w-full lg:w-80 flex flex-col space-y-6">
 
                 <!-- Start Game Button (Host/Waiting state) -->
@@ -169,10 +185,37 @@
                     </div>
                 </div>
 
-                <!-- Game Logs -->
-                <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 shadow-md flex-grow flex flex-col h-64">
-                    <h3 class="text-sm font-bold text-slate-400 mb-2">対戦ログ</h3>
-                    <div id="game-logs" class="flex-grow overflow-y-auto text-xs space-y-1 font-mono text-slate-300 pr-1">
+                <!-- Logs & Chat Tabbed Box -->
+                <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-md flex-grow flex flex-col h-80 overflow-hidden">
+                    <!-- Tab Header -->
+                    <div class="flex border-b border-slate-700 bg-slate-900/50">
+                        <button id="tab-btn-logs" onclick="switchTab('logs')" class="flex-1 py-2.5 text-xs font-bold text-amber-400 border-b-2 border-amber-400 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-list-ul"></i> 対戦ログ
+                        </button>
+                        <button id="tab-btn-chat" onclick="switchTab('chat')" class="flex-1 py-2.5 text-xs font-bold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition flex items-center justify-center gap-2 relative">
+                            <i class="fa-solid fa-comments"></i> チャット
+                            <span id="chat-badge" class="hidden absolute top-2 right-4 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                        </button>
+                    </div>
+
+                    <!-- Log View Container -->
+                    <div id="tab-content-logs" class="flex-grow p-3 overflow-y-auto text-xs space-y-1 font-mono text-slate-300">
+                        <div id="game-logs" class="space-y-1"></div>
+                    </div>
+
+                    <!-- Chat View Container -->
+                    <div id="tab-content-chat" class="hidden flex-grow flex flex-col justify-between p-3 overflow-hidden">
+                        <!-- Message Container -->
+                        <div id="chat-messages" class="flex-grow overflow-y-auto text-xs space-y-2 pr-1 mb-2">
+                        </div>
+                        
+                        <!-- Chat Input Form -->
+                        <div class="flex gap-2 pt-2 border-t border-slate-700/60">
+                            <input type="text" id="input-chat-message" onkeydown="handleChatKeyPress(event)" placeholder="メッセージを入力..." class="flex-grow px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            <button onclick="sendChatMessage()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-lg text-xs transition">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -203,6 +246,8 @@
         const socket = io();
         let currentRoom = '';
         let pendingWildCardId = null;
+        let activeTab = 'logs';
+        let previousChatCount = 0;
 
         const COLOR_MAP = {
             'Red': '赤',
@@ -311,6 +356,48 @@
                     chosen_color: color
                 });
                 pendingWildCardId = null;
+            }
+        }
+
+        // --- チャット関連処理 ---
+        function switchTab(tab) {
+            activeTab = tab;
+            const btnLogs = document.getElementById('tab-btn-logs');
+            const btnChat = document.getElementById('tab-btn-chat');
+            const contentLogs = document.getElementById('tab-content-logs');
+            const contentChat = document.getElementById('tab-content-chat');
+            const chatBadge = document.getElementById('chat-badge');
+
+            if (tab === 'logs') {
+                btnLogs.className = 'flex-1 py-2.5 text-xs font-bold text-amber-400 border-b-2 border-amber-400 transition flex items-center justify-center gap-2';
+                btnChat.className = 'flex-1 py-2.5 text-xs font-bold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition flex items-center justify-center gap-2 relative';
+                contentLogs.classList.remove('hidden');
+                contentChat.classList.add('hidden');
+            } else {
+                btnChat.className = 'flex-1 py-2.5 text-xs font-bold text-amber-400 border-b-2 border-amber-400 transition flex items-center justify-center gap-2 relative';
+                btnLogs.className = 'flex-1 py-2.5 text-xs font-bold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition flex items-center justify-center gap-2';
+                contentChat.classList.remove('hidden');
+                contentLogs.classList.add('hidden');
+                chatBadge.classList.add('hidden'); // チャットタブ開いた際に通知バッジ非表示
+                
+                // チャットの最下部まで自動スクロール
+                const chatContainer = document.getElementById('chat-messages');
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('input-chat-message');
+            const msg = input.value.trim();
+            if (!msg || !currentRoom) return;
+
+            socket.emit('send_chat', { room: currentRoom, message: msg });
+            input.value = '';
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendChatMessage();
             }
         }
 
@@ -444,6 +531,7 @@
                     <div class="flex items-center space-x-2">
                         <span class="font-bold text-sm ${p.is_current ? 'text-amber-400' : 'text-slate-200'}">${p.name}</span>
                         ${p.uno_called ? '<span class="text-[10px] bg-red-600 text-white font-black px-2 py-0.5 rounded-full">UNO</span>' : ''}
+                        ${!p.is_online ? '<span class="text-[10px] bg-slate-700 text-slate-400 font-bold px-2 py-0.5 rounded-full">切断中</span>' : ''}
                     </div>
                     <div class="flex items-center space-x-2">
                         <span class="text-xs text-slate-400">${p.card_count} 枚</span>
@@ -453,6 +541,7 @@
                 playersList.appendChild(pEl);
             });
 
+            // ゲーム対戦ログの更新
             const logsContainer = document.getElementById('game-logs');
             logsContainer.innerHTML = '';
             state.logs.forEach(log => {
@@ -460,7 +549,39 @@
                 logEl.innerText = log;
                 logsContainer.appendChild(logEl);
             });
-            logsContainer.scrollTop = logsContainer.scrollHeight;
+            const logsTabContainer = document.getElementById('tab-content-logs');
+            logsTabContainer.scrollTop = logsTabContainer.scrollHeight;
+
+            // チャットメッセージの更新
+            const chatMessagesContainer = document.getElementById('chat-messages');
+            const myName = document.getElementById('input-name').value.trim();
+            chatMessagesContainer.innerHTML = '';
+            
+            if (state.chat_messages) {
+                state.chat_messages.forEach(chat => {
+                    const msgEl = document.createElement('div');
+                    const isMe = chat.sender === myName;
+                    
+                    msgEl.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
+                    msgEl.innerHTML = `
+                        <span class="text-[10px] text-slate-400 mb-0.5">${chat.sender}</span>
+                        <div class="px-3 py-1.5 rounded-xl max-w-[85%] break-words ${isMe ? 'bg-amber-500 text-slate-900 font-medium' : 'bg-slate-700 text-slate-100'}">
+                            ${chat.text}
+                        </div>
+                    `;
+                    chatMessagesContainer.appendChild(msgEl);
+                });
+
+                // 未読チャットバッジ表示判定
+                if (state.chat_messages.length > previousChatCount && activeTab !== 'chat') {
+                    document.getElementById('chat-badge').classList.remove('hidden');
+                }
+                previousChatCount = state.chat_messages.length;
+
+                if (activeTab === 'chat') {
+                    chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                }
+            }
         }
     </script>
 </body>
