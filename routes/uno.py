@@ -184,19 +184,7 @@ class UnoGame:
         player = next((p for p in self.players if p["id"] == sid), None)
         if player:
             player["is_online"] = False
-            self.log(f"【切断】{player['name']} さんの通信が切断されました。")
-
-            # 待機画面中であればそのまま削除
-            if self.status == "waiting":
-                self.players.remove(player)
-            # ゲーム中の場合は、全員がオフラインになったかチェック
-            elif self.status == "playing":
-                online_players = [p for p in self.players if p["is_online"]]
-                if len(online_players) < 2:
-                    self.status = "finished"
-                    self.log(
-                        "アクティブなプレイヤーが不足したため、ゲームを終了しました。"
-                    )
+            self.log(f"【一時切断】{player['name']} さんの通信が切断されました。")
 
     def remove_player(self, sid):
         player = next((p for p in self.players if p["id"] == sid), None)
