@@ -122,6 +122,8 @@ class UnoGame:
         self.winner = None
         self.logs = []
         self.chat_messages = []
+        # 追加: DrawTwoのスタック（積み上げ）用カウンター
+        self.pending_draw_count = 0
 
     def log(self, text):
         self.logs.append(text)
@@ -142,16 +144,13 @@ class UnoGame:
         return True
 
     def add_player(self, sid, name):
-        # 10名までに変更
         if len(self.players) >= 10:
             return False, "ルームが満員です。"
 
-        # 既存プレイヤーの再接続（同名プレイヤーがすでにいる場合）の判定
         existing_player = next(
             (p for p in self.players if p["name"] == name), None
         )
         if existing_player:
-            # 再接続として SID を更新
             existing_player["id"] = sid
             existing_player["is_online"] = True
             self.log(f"【再接続】{name} さんが復帰しました。")
@@ -225,7 +224,6 @@ class UnoGame:
                 "プレイヤー人数は3〜10人である必要があります。",
             )
 
-        # 参加メンバーの並び順をランダムにシャッフルする
         random.shuffle(self.players)
 
         self.deck = create_deck()
@@ -234,6 +232,7 @@ class UnoGame:
         self.direction = 1
         self.current_turn = 0
         self.winner = None
+        self.pending_draw_count = 0
 
         for player in self.players:
             player["hand"] = self.draw_card(7)
@@ -272,19 +271,14 @@ class UnoGame:
             self.direction *= -1
             self.log("最初のカードがReverseのため、順番が逆回りになりました。")
         elif card["value"] == "DrawTwo":
-            curr_player = self.players[self.current_turn]
-            drawn = self.draw_card(2)
-            curr_player["hand"].extend(drawn)
-            self.log(
-                f"最初のカードがDrawTwoのため、{curr_player['name']} さんが2枚引いてターンがスキップされました。"
-            )
-            self.advance_turn()
+            # 最初のカードがDrawTwoの場合は2枚溜める
+            self.pending_draw_count = 2
+            self.log("最初のカードがDrawTwoのため、累積ドロー数が 2 枚になりました。")
 
     def advance_turn(self):
         if 0 <= self.current_turn < len(self.players):
             self.players[self.current_turn]["has_drawn"] = False
 
-        # 切断されているプレイヤーを自動スキップするループ
         for _ in range(len(self.players)):
             self.current_turn = (self.current_turn + self.direction) % len(
                 self.players
@@ -293,6 +287,10 @@ class UnoGame:
                 break
 
     def is_valid_play(self, card):
+        # DrawTwoが累積している場合は DrawTwo しか出せない
+        if self.pending_draw_count > 0:
+            return card["value"] == "DrawTwo"
+
         top_card = self.discard_pile[-1]
         if (
             card["type"] == "wild"
@@ -310,6 +308,10 @@ class UnoGame:
         card = next((c for c in curr_player["hand"] if c["id"] == card_id), None)
         if not card or not self.is_valid_play(card):
             return False, "そのカードは出せません。"
+
+        # ① 特殊カード上がりの禁止判定 (数字カード以外で上がろうとした場合はエラー)
+        if len(curr_player["hand"]) == 1 and card["type"] != "number":
+            return False, "記号カード・ワイルドカードで上がることはできません。"
 
         if card["type"] == "wild" and not chosen_color:
             return False, "色の選択が必要です。"
@@ -341,20 +343,21 @@ class UnoGame:
             (self.current_turn + self.direction) % len(self.players)
         ]
 
-        if card["value"] == "Skip":
+        # 効果処理
+        if card["value"] == "DrawTwo":
+            # ② DrawTwoのスタック処理（2枚加算して次のプレイヤーへ）
+            self.pending_draw_count += 2
+            self.log(
+                f"🔥 {curr_player['name']} さんが DrawTwo を重ねました！現在のペナルティは合計 {self.pending_draw_count} 枚です。"
+            )
+            self.advance_turn()
+        elif card["value"] == "Skip":
             self.log(f"{next_player['name']} さんのターンがスキップされました。")
             self.advance_turn()
             self.advance_turn()
         elif card["value"] == "Reverse":
             self.direction *= -1
             self.log("順番が逆回りになりました！")
-            self.advance_turn()
-        elif card["value"] == "DrawTwo":
-            next_player["hand"].extend(self.draw_card(2))
-            self.log(
-                f"{next_player['name']} さんは2枚引かされ、ターンがスキップされました。"
-            )
-            self.advance_turn()
             self.advance_turn()
         elif card["value"] == "WildDrawFour":
             next_player["hand"].extend(self.draw_card(4))
@@ -373,6 +376,19 @@ class UnoGame:
         if curr_player["id"] != sid or curr_player["has_drawn"]:
             return False, "カードを引けません。"
 
+        # ② DrawTwoの累積状態がある場合のドロー処理
+        if self.pending_draw_count > 0:
+            drawn = self.draw_card(self.pending_draw_count)
+            curr_player["hand"].extend(drawn)
+            self.log(
+                f"💥 {curr_player['name']} さんは DrawTwo を出せなかったため、累積 {self.pending_draw_count} 枚のカードを引きました。"
+            )
+            self.pending_draw_count = 0
+            # ペナルティで引いた後は自動的にターンがスキップされる
+            self.advance_turn()
+            return True, "ペナルティ消化"
+
+        # 通常時の山札引き
         drawn = self.draw_card(1)
         if drawn:
             curr_player["hand"].extend(drawn)
@@ -458,6 +474,7 @@ class UnoGame:
             "deck_count": len(self.deck),
             "winner": self.winner,
             "has_drawn": my_player["has_drawn"] if my_player else False,
+            "pending_draw_count": self.pending_draw_count,
             "logs": self.logs,
             "chat_messages": self.chat_messages
         }
@@ -616,7 +633,6 @@ def handle_disconnect():
         player = next((p for p in game.players if p["id"] == sid), None)
         if player:
             game.handle_disconnect(sid)
-            # 全員退出した場合は部屋を削除
             if len([p for p in game.players if p.get("is_online", True)]) == 0:
                 del rooms[room_code]
             else:
