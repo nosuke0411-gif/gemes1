@@ -225,6 +225,9 @@ class UnoGame:
                 "プレイヤー人数は3〜10人である必要があります。",
             )
 
+        # 参加メンバーの並び順をランダムにシャッフルする
+        random.shuffle(self.players)
+
         self.deck = create_deck()
         self.discard_pile = []
         self.status = "playing"
